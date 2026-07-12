@@ -1,0 +1,21 @@
+# Segredos — NUNCA versionar
+.env
+.env.*
+PROMPT_MESTRE_QuantAI.md
+
+# Dados brutos (grandes, reproduzíveis via scripts)
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Configuração local do assistente
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
