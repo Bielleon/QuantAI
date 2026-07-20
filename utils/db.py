@@ -25,12 +25,15 @@ def _url(tabela: str) -> str:
     return f"{config.SUPABASE_URL}/rest/v1/{tabela}"
 
 
-def selecionar(tabela: str, params: dict | None = None, order: str | None = None) -> list[dict]:
+def selecionar(tabela: str, params: dict | None = None, order: str | None = None,
+               limite: int | None = None) -> list[dict]:
     """SELECT com filtros PostgREST. Pagina automaticamente (lotes de 1000).
 
     `order` é OBRIGATÓRIO (ex.: 'id' ou 'ticker,data'): sem ORDER BY o Postgres
     não garante ordem estável entre páginas — linhas poderiam repetir ou sumir
     silenciosamente entre uma página e outra.
+    `limite`: se informado, devolve no máximo N linhas (paginando se N > 1000,
+    pois o PostgREST corta cada requisição em max-rows=1000 SEM avisar).
     """
     params = dict(params or {})
     if order:
@@ -40,15 +43,19 @@ def selecionar(tabela: str, params: dict | None = None, order: str | None = None
     resultado: list[dict] = []
     offset = 0
     while True:
-        params["limit"] = 1000
+        pagina = 1000 if limite is None else min(1000, limite - len(resultado))
+        if pagina <= 0:
+            return resultado
+        params["limit"] = pagina
         params["offset"] = offset
         r = requests.get(_url(tabela), headers=_headers(), params=params, timeout=_TIMEOUT)
         r.raise_for_status()
         lote = r.json()
         resultado.extend(lote)
-        if len(lote) < 1000:
+        # página vazia = fim dos dados (robusto mesmo se o max-rows do servidor mudar)
+        if not lote or (limite is not None and len(resultado) >= limite):
             return resultado
-        offset += 1000
+        offset += len(lote)
 
 
 def upsert(tabela: str, linhas: list[dict], on_conflict: str) -> int:

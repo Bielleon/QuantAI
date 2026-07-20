@@ -127,9 +127,49 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
       A previsão do plano (seção 4) foi testada e o caminho simples venceu.
     - **IGTI11 só tem série a partir de 2021-11-22** (reestruturação Iguatemi/Jereissati
       criou a unit IGTI11 em nov/2021; antes o ticker era IGTA3). IGTA3.SA está deslistado
-      do yfinance (série vazia) — emenda impossível pela mesma fonte. PROPOSTA (aguarda OK
-      do humano): IGTI11 fica inelegível nos meses sem preço (fev–nov/2021), entrando no
-      backtest a partir de dez/2021; registrado como limitação declarada.
+      do yfinance (série vazia) — emenda impossível pela mesma fonte. **APROVADO pelo
+      humano em 2026-07-19:** IGTI11 fica inelegível nos meses sem preço (fev–nov/2021),
+      entrando no backtest a partir de dez/2021; registrado como limitação declarada.
+
+---
+
+## 2026-07-19 — FASE 2 (notícias GDELT)
+
+19. **Inspeção do noticias_finais.csv:** 13.455 linhas, 0 URLs duplicadas, 0 datas
+    inválidas, 11 veículos (InfoMoney/Globo/Estadão/UOL/Exame dominam), campo `tom`
+    100% parseável. Mapeamento APROVADO pelo humano em 2026-07-19:
+    DATE(AAAAMMDDHHMMSS, UTC)→data_pub; url→url (dedup); fonte(domínio)→veiculo;
+    tom (1º dos 7 valores)→tom_gdelt; fonte da tabela='gdelt'; título extraído do slug
+    da URL (95,7% legíveis; 574 ilegíveis ficam com titulo NULL para o Cheerio/FASE 3).
+    Colunas temas/locais/organizacoes/arquivo_origem NÃO importadas (modelo não usa;
+    preservadas no CSV versionado).
+
+20. **MUDANÇA DE REGRA TRAVADA (seção 8) — APROVADA explicitamente pelo humano em
+    2026-07-19:** o GDELT só tem dados a partir de 12/07/2021 (jan–jun/2021 = zero
+    notícias, sem base de sinal). Novo período: **sinais a partir de ago/2021 (1º mês
+    completo de mídia), primeira carteira em set/2021**; fim inalterado (jun/2026).
+    Motivo: carteira sem sinal não é defensável perante a banca. Vira limitação
+    declarada no relatório ("dados de mídia disponíveis a partir de jul/2021").
+    `config.BACKTEST_INICIO` atualizado de '2021-01' para '2021-08'.
+
+21. **Importação GDELT executada + revisão adversarial (8 achados confirmados, todos
+    tratados):** 13.455 notícias importadas (idempotente: 2ª execução insere 0).
+    O extrator de títulos por slug foi endurecido após a revisão:
+    - ids numéricos só são removidos nas BORDAS do slug — no meio são valores da
+      manchete (ex.: 'lucro-r-44561-bilhoes' = R$ 445,61 bi; antes o valor sumia e o
+      título enganoso iria para o LLM);
+    - padrão antigo do Estadão ('secao,slug,id') tratado; datas no fim de URLs
+      (Reuters/Estadão) descartadas; 'NNpercent' vira 'NN%'; espaços normalizados.
+    - **Limitação declarada:** o separador decimal não existe no slug ('067percent' =
+      0,67% vira '067%'); ~190 manchetes têm número com decimal ambíguo. Mitigação
+      possível na FASE 3 (buscar título real via Cheerio também para essas).
+    - `db.selecionar(limite>1000)` truncava silenciosamente em 1000 (max-rows do
+      PostgREST); agora pagina até o limite e para em página vazia (robusto a
+      mudança do cap do servidor).
+    - Sem título via slug: 446 URLs (3,3%) — candidatas ao Cheerio na FASE 3. O número
+      subiu de 248 para 446 de propósito: slugs que ficaram genéricos demais após a
+      limpeza (ex.: 'melhores acoes ibovespa' sem a data) agora vão buscar o título
+      real em vez de entrar com manchete adivinhada.
 
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
