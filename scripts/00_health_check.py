@@ -18,7 +18,9 @@ RESULTADOS: list[tuple[str, str, str, str]] = []  # (serviço, chave mascarada, 
 
 
 def registrar(servico: str, chave: str, ok: bool, detalhe: str = ""):
-    detalhe = config.redigir(detalhe)  # defesa em profundidade: nunca imprimir chave inteira
+    # defesa em profundidade: SEMPRE redigir ANTES de truncar (truncar primeiro
+    # poderia cortar uma chave no meio e impedir o mascaramento de reconhecê-la)
+    detalhe = config.redigir(detalhe)[:200]
     RESULTADOS.append((servico, chave, "OK" if ok else "FALHOU", detalhe))
     print(f"  [{'OK' if ok else 'XX'}] {servico:<22} {chave:<22} {detalhe}")
 
@@ -47,7 +49,7 @@ def testar_supabase():
             )
             registrar(nome, config.mascarar(chave), r.status_code == 200, f"HTTP {r.status_code}")
         except requests.RequestException as e:
-            registrar(nome, config.mascarar(chave), False, str(e)[:120])
+            registrar(nome, config.mascarar(chave), False, str(e))
 
 
 def testar_apify():
@@ -85,7 +87,7 @@ def testar_fontes_sem_chave():
         registrar("BCB Selic (SGS 11)", "-", r.status_code == 200,
                   f"último dado: {dado.get('data')} = {dado.get('valor')}")
     except Exception as e:  # noqa: BLE001
-        registrar("BCB Selic (SGS 11)", "-", False, str(e)[:120])
+        registrar("BCB Selic (SGS 11)", "-", False, str(e))
 
     # CVM IPE (dados abertos)
     try:
@@ -97,7 +99,7 @@ def testar_fontes_sem_chave():
         r.close()
         registrar("CVM IPE (zip 2021)", "-", r.status_code == 200, f"HTTP {r.status_code}, {tamanho} bytes")
     except Exception as e:  # noqa: BLE001
-        registrar("CVM IPE (zip 2021)", "-", False, str(e)[:120])
+        registrar("CVM IPE (zip 2021)", "-", False, str(e))
 
     # yfinance (^BVSP, 5 dias)
     try:
@@ -105,7 +107,7 @@ def testar_fontes_sem_chave():
         hist = yf.Ticker("^BVSP").history(period="5d")
         registrar("yfinance (^BVSP)", "-", not hist.empty, f"{len(hist)} pregões retornados")
     except Exception as e:  # noqa: BLE001
-        registrar("yfinance (^BVSP)", "-", False, str(e)[:120])
+        registrar("yfinance (^BVSP)", "-", False, str(e))
 
 
 def main():

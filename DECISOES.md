@@ -81,10 +81,60 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     - `flags_relatorio` ganhou modelo/model_version/prompt_hash e unique(doc_id) — o veto
       também é saída de LLM e precisa da mesma trilha de auditoria do sentimento.
 
+---
+
+## 2026-07-19 — FASE 1 (universo)
+
+13. **Nome do robô definido pelo humano:** Hermes (usado nas cartas mensais da seção 9.3).
+
+14. **DDL aplicado via MCP do Supabase** (`apply_migration`, migração `fase0_schema_inicial`),
+    resolvendo a pendência da FASE 0. O projeto estava INACTIVE (pausa automática do plano
+    gratuito após dias sem uso) e foi restaurado antes — atenção: isso pode se repetir em
+    períodos de inatividade; basta restaurar no painel ou via MCP.
+
+15. **Limpeza do CSV do universo (autorizada pelo humano: "pode excluir o que não achar
+    necessário"):**
+    - 2 linhas órfãs descartadas (sem ticker/nome, só com um volume solto — resíduo de
+      edição manual da planilha);
+    - colunas `nivel_governanca`, `aprovado_final` e `observacoes` NÃO importadas
+      (100% vazias em todas as linhas);
+    - coluna `volume` mantida no jsonb como `volume_medio` (informação de liquidez);
+    - `roe_desvio_padrao_%` está zerado em TODAS as linhas (não foi calculado de fato) —
+      mantido no jsonb por fidelidade ao arquivo original, mas **não pode ser usado em
+      análise** — limitação declarada para o relatório;
+    - setores em inglês normalizados para o padrão pt-BR do próprio CSV (Finance→Serviços
+      Financeiros p/ ITSA4, Producer Manufacturing→Bens Industriais p/ POMO4,
+      Utilities→Energia p/ ALUP11), original preservado em `setor_original` no jsonb.
+
+16. **Empresas com 2 classes de ação no CSV (Petrobras: PETR3+PETR4; Itaú: ITUB3+ITUB4):**
+    importadas as 4 linhas, mas PETR3 e ITUB3 ficam com `ativo=false` (motivo no jsonb).
+    Razão: o modelo é 1 empresa = 1 fluxo de notícias; duas classes da mesma empresa
+    duplicariam o sinal de sentimento. Mantidas as classes MAIS líquidas (PETR4: 27,3M
+    vs 9,7M; ITUB4: 28,8M vs 1,8M de volume), que são as da tabela de apelidos da equipe.
+    Universo ativo final: 20 tickers.
+
+17. **Data-base das métricas do CSV (viés de sobrevivência — resposta do humano):** o
+    humano informa que as métricas cobrem "apenas 5 anos" das empresas da lista, mas o
+    CSV registra `anos_disponiveis=10` em todas as linhas — divergência anotada como
+    limitação declarada: o filtro de qualidade foi feito pela equipe com dados que
+    incluem o período recente, logo o universo carrega viés de sobrevivência/seleção
+    (empresas escolhidas por terem sido boas ATÉ HOJE). Vai como limitação no relatório
+    final. (Se a equipe esclarecer a janela exata, atualizar aqui.)
+
+18. **Validação yfinance do universo (2026-07-19):** 20 tickers ativos + ^BVSP verificados.
+    - **Emendas CCRO3→MOTV3 e TRPL4→ISAE4 NÃO são necessárias:** o yfinance preserva o
+      histórico completo sob o ticker novo (MOTV3.SA e ISAE4.SA têm série desde 2020-12-01).
+      A previsão do plano (seção 4) foi testada e o caminho simples venceu.
+    - **IGTI11 só tem série a partir de 2021-11-22** (reestruturação Iguatemi/Jereissati
+      criou a unit IGTI11 em nov/2021; antes o ticker era IGTA3). IGTA3.SA está deslistado
+      do yfinance (série vazia) — emenda impossível pela mesma fonte. PROPOSTA (aguarda OK
+      do humano): IGTI11 fica inelegível nos meses sem preço (fev–nov/2021), entrando no
+      backtest a partir de dez/2021; registrado como limitação declarada.
+
 ## Pendências abertas
-- [ ] DDL no Supabase (decisão do humano: SQL Editor ou connection string).
-- [ ] Data-base das métricas do CSV do universo (viés de sobrevivência — registrar como foi feito o filtro).
-- [ ] `NOME_DO_ROBO` para as cartas mensais (seção 9.3) — não definido no plano.
+- [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
+- [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).
+- [x] `NOME_DO_ROBO` — Hermes (item 13).
 - [ ] Autenticação do GitHub CLI (`gh auth login`) para criar o repositório privado.
 - [ ] SUPABASE_ANON_KEY inválida (401) — recopiar do painel quando formos fazer dashboard.
 - [ ] Chave Gemini 2/3 inválida (401) — regenerar no AI Studio/console.
