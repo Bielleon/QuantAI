@@ -135,6 +135,7 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).
 - [x] `NOME_DO_ROBO` — Hermes (item 13).
-- [ ] Autenticação do GitHub CLI (`gh auth login`) para criar o repositório privado.
+- [x] GitHub — resolvido em 2026-07-19: login via device flow (conta Bielleon),
+      repositório PRIVADO criado em https://github.com/Bielleon/QuantAI, push ok.
 - [ ] SUPABASE_ANON_KEY inválida (401) — recopiar do painel quando formos fazer dashboard.
 - [ ] Chave Gemini 2/3 inválida (401) — regenerar no AI Studio/console.
