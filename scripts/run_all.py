@@ -11,7 +11,7 @@ SCRIPTS = [
     "00_health_check.py",
     "01_universo.py",
     "02_gdelt_noticias.py",
-    "03_cheerio_titulos.py",   # gasta créditos Apify
+    "03_titulos_reais.py",     # coleta local (custo zero)
     "04_cvm_ipe.py",
     "05_google_news.py",       # gasta créditos Apify (Pay Per Event)
     "06_precos_selic.py",

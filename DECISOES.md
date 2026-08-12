@@ -171,6 +171,44 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
       limpeza (ex.: 'melhores acoes ibovespa' sem a data) agora vão buscar o título
       real em vez de entrar com manchete adivinhada.
 
+---
+
+## 2026-07-20 — FASE 3 (títulos reais)
+
+22. **Troca do apify/cheerio-scraper por coleta local (requests + BeautifulSoup):**
+    ao rodar o lote-teste, a API da Apify devolveu 403
+    `full-permission-actor-not-approved` — o actor passou a exigir aprovação manual de
+    permissões no console de CADA conta (ação que só o humano logado pode fazer, e
+    seria necessária nas 7 contas do failover). Teste local nas mesmas URLs: 20/20
+    títulos extraídos, custo R$ 0, sem depender do failover de cotas (item 5).
+    DECISÃO: FASE 3 usa coletor local (`scripts/03_titulos_reais.py`); o actor fica
+    como fallback documentado caso os sites passem a bloquear requisições diretas.
+    Educação com servidores: 8 requisições paralelas no total, domínios intercalados,
+    pausa de 0,1s por requisição. O humano aprovou a fase e o escopo (446 NULL + 193
+    ambíguas); a troca de ferramenta mantém o resultado e elimina o custo.
+
+23. **Supabase pausou pela 2ª vez em 2 dias** (free tier; a 1ª pausa foi após os 7 dias
+    padrão, esta segunda fora do padrão). Restaurado via MCP. Se a frequência
+    atrapalhar, considerar: manter o painel aberto durante o trabalho, ou plano Pro.
+    Monitorando por ora.
+
+24. **Execução da FASE 3 + revisão adversarial (8 achados confirmados, todos tratados):**
+    626 títulos reais coletados (de 639 na fila), custo R$ 0. Correções pós-revisão:
+    - **Encoding:** parse via bytes (BeautifulSoup detecta charset do meta) — páginas
+      UTF-8 sem charset no header (Folha) corrompiam acentos; 6 títulos reparados.
+    - **Sufixo de veículo** ('| G1', '| Exame INSIGHT', '- InfoMoney'...) e prefixo
+      'Opinião |' agora sempre removidos; saneamento retroativo em 341 títulos.
+    - **105 'Fórum dos Leitores' (Estadão) + 2 páginas-hub (InfoMoney)** anulados:
+      compilações/listagens sem manchete própria — ficam fora da classificação.
+    - **401/403/429 = 'bloqueada' (anti-bot)**, não 'morta': 8 URLs da Reuters existem
+      mas não saem sem navegador — perda declarada (0,06% do corpus).
+    - **Ponto-fixo na fila:** ambíguas só se o título for todo minúsculo (assinatura de
+      slug) — título real corrigido nunca volta à fila, mesmo sem o log local.
+    - **Persistência incremental** (grava resultado a resultado; interrupção não perde nada).
+    - Estado final: **13.335/13.455 notícias com título (99,1%)**; 120 sem título
+      (107 deliberados + 9 bloqueadas/mortas + 4 erros de rede persistentes após 3
+      tentativas — regra das 3 falhas aplicada, paramos de insistir).
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).
