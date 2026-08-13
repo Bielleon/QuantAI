@@ -258,6 +258,28 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     Lição registrada para o relatório: "HTTP 200" não é sinônimo de conteúdo válido —
     toda coleta automática precisa validar o formato do que recebeu.
 
+---
+
+## 2026-08-12 — FASE 6 (preços e renda fixa)
+
+30. **Preços:** 29.546 cotações (20 tickers + ^BVSP), fechamento AJUSTADO via yfinance
+    (`auto_adjust=True`, já incorpora dividendos e desdobramentos), 2020-12-01 até hoje.
+    O início 1 mês antes do backtest dá a janela necessária para a tendência de 3 meses.
+    Sanidade conferida: PETR4 +481% no período (dividendos extraordinários reinvestidos),
+    ^BVSP +50,4%, ITUB4 +106% — coerentes com o período.
+
+31. **Selic:** 1.431 dias (SGS série 11). O BCB publica em PERCENTUAL ao dia; gravamos
+    como **fração decimal** (0,052531% → 0,00052531) para acúmulo direto no backtest.
+    Média do período: 0,00042208/dia ≈ **11,22% a.a. equivalente**. Os 56 dias úteis sem
+    taxa são feriados bancários (~10/ano — esperado). A MESMA série alimenta a perna RF
+    do robô, o benchmark 60/40 e a taxa livre de risco do Sharpe (exigência da seção 8).
+
+32. **Buracos nas séries (limitação declarada):** 8 dos 20 tickers não têm cotação em
+    2026-07-20 e 2026-07-31 (2 pregões de 1.419 = 0,14%), ausentes na fonte — o ^BVSP
+    tem esses dias. Tratamento na FASE 8: repetir o último preço disponível
+    (forward-fill), padrão de mercado para falha pontual de fonte. IGTI11 tem 1.180
+    pregões (estreia em 2021-11-22, conforme aprovado).
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).
