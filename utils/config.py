@@ -32,10 +32,10 @@ CUSTO_TURNOVER = 0.001           # fração (0,1% sobre o turnover)
 PCT_RV_BASE = 60.0               # %RV = base -/+ sensibilidade * S_mercado (escala percentual)
 PCT_RV_SENSIBILIDADE = 20.0
 PCT_RV_MIN, PCT_RV_MAX = 40.0, 80.0
-BACKTEST_INICIO = "2021-08"      # 1º mês de sinal; 1ª carteira executa em set/2021.
-                                 # (Original era 2021-01; mudança aprovada pelo humano em
-                                 # 2026-07-19 — GDELT só tem dados a partir de 12/07/2021.
-                                 # Ver DECISOES.md item 20.)
+BACKTEST_INICIO = "2021-01"      # 1º mês de sinal; 1ª carteira executa em fev/2021.
+                                 # Voltou ao valor original em 2026-08-13 (aprovado): a
+                                 # coleta do Google News cobriu jan–jun/2021 com densidade
+                                 # equivalente à do resto de 2021. Ver DECISOES.md item 39.
 BACKTEST_FIM = "2026-06"
 LLM_TEMPERATURE = 0.0            # todas as chamadas LLM (prompts congelados, seção 9)
 

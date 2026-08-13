@@ -348,6 +348,61 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     look-ahead (nenhum dado futuro entra no sinal do mês), mas muda o regime da
     estratégia ao longo do tempo e precisa ser dito no relatório.
 
+39. **REVERSÃO da mudança do item 20 — aprovada pelo humano em 2026-08-13.** O período do
+    backtest volta ao ORIGINAL: **sinais de jan/2021 a jun/2026, primeira carteira em
+    fev/2021**. Justificativa empírica: a coleta do Google News cobriu jan–jun/2021 com
+    média de **11,7 empresas elegíveis/mês**, praticamente idêntica aos 12,2 de
+    jul–dez/2021 (período já coberto pelo GDELT). A limitação declarada no item 20
+    deixa de existir; ganhamos 7 meses de backtest. `config.BACKTEST_INICIO='2021-01'`.
+
+40. **Empresas cronicamente abaixo do limiar (TAEE11 21%, ALUP11 23%, ISAE4 26%,
+    GRND3 32%) permanecem no universo.** Removê-las agora seria decidir com base em
+    informação de hoje sobre todo o período — viés de seleção. A regra de elegibilidade
+    já as exclui automaticamente nos meses sem cobertura, que é o comportamento correto:
+    sem notícia, sem sinal. Registrado para o relatório.
+
+41. **Auditoria adversarial do pré-filtro (item 35) — APROVADO.** 23 agentes varreram os
+    2.815 documentos descartados por 3 estratégias independentes (varredura de todos os
+    assuntos; leitura ampla dos Fatos Relevantes; busca por vocabulário ALTERNATIVO que
+    comunicaria risco grave sem usar os termos da lista). Levantaram 20 suspeitas;
+    **nenhuma se confirmou** sob verificação. Conclusão registrada: o pré-filtro não
+    custou recall de vetos.
+
+---
+
+## 2026-08-13 — FASE 7 (piloto de sentimento)
+
+42. **Piloto de 200 manchetes (150 classificadas antes da cota):** distribuição
+    **neutro 38,7% / positivo 33,3% / negativo 28,0%** — saudável, sem degeneração
+    (um classificador quebrado tende a colapsar em uma classe só). Mapeamento
+    entidade→ticker validado nas armadilhas do plano: "Itaú"→ITUB4 vs "Itaúsa"→ITSA4,
+    "CCR"/"Motiva"→MOTV3, e empresas fora do universo (Vale, Magazine Luiza)→NULL.
+
+43. **PONTO DE ATENÇÃO — taxa de mapeamento de 24,7% no piloto.** Só 37 das 150
+    manchetes mapearam para empresa do universo. Causa provável: o piloto pegou as
+    notícias mais ANTIGAS por id, que são do GDELT e majoritariamente macro
+    (combustíveis, Ibovespa, política) — o GDELT foi coletado por tema, não por empresa.
+    As do Google News foram buscadas POR empresa e devem mapear muito mais. Se a taxa
+    final ficar baixa, a contagem por empresa/mês cai e a elegibilidade fica mais
+    restritiva que o previsto na cobertura provisória (item 37), que usava casamento
+    ingênuo por apelido. **A medir quando a classificação avançar** — pode exigir
+    reavaliar o limiar de 10 notícias/mês (regra travada: só muda com aprovação).
+---
+
+## 2026-08-13 — FASE 8 (motor do backtest)
+
+44. **Bug encontrado na 1ª execução: dinheiro parado.** Quando nenhuma empresa é
+    elegível no mês (comum onde a cobertura é baixa), a parcela de RV ficava SEM
+    destino, rendendo zero. Correção: a RV não investida vai para o Tesouro Selic —
+    `peso_rf = 1 − Σ(pesos efetivamente alocados)`, que é o que um gestor faria de fato.
+    Sem isso a estratégia seria injustamente penalizada nos meses de baixa cobertura.
+    A carteira grava `pct_rv_efetivo` (alocação real) além do `pct_rv` teórico da
+    fórmula; o gráfico de alocação e o turnover usam o efetivo.
+
+45. **Teste anti-look-ahead implementado e PASSANDO** (assert que roda como parte do
+    backtest): verifica que toda notícia contada no sinal do mês M tem registro no
+    próprio mês M, e que a execução cai sempre no 1º pregão de M+1.
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).
