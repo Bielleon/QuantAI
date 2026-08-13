@@ -209,6 +209,55 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
       (107 deliberados + 9 bloqueadas/mortas + 4 erros de rede persistentes após 3
       tentativas — regra das 3 falhas aplicada, paramos de insistir).
 
+---
+
+## 2026-08-12 — FASE 4 (CVM / veto)
+
+25. **Metadados IPE:** 5.102 documentos das 20 empresas (1.171 Fatos Relevantes +
+    3.931 Comunicados ao Mercado), 2021–2026. Ajustes de matching após auditoria dos
+    nomes casados: **SBSP3 incluída** (a CVM registra "CIA SANEAMENTO BÁSICO ESTADO SÃO
+    PAULO" — sem a palavra "Sabesp", o matching automático não alcançava: 308 docs
+    seriam perdidos) e **2 falsos positivos do BTG excluídos** (BTG Pactual Commodities
+    Sertrading e BTG Pactual Participations Ltd — entidades distintas da BPAC11).
+    Renomeações confirmadas no casamento: CCR→MOTV3, CTEEP→ISAE4, Iguatemi Shopping→IGTI11.
+
+26. **Três defeitos de infraestrutura encontrados e corrigidos durante a execução:**
+    - *Processos duplicados:* o mesmo script rodava 2x em paralelo escrevendo os mesmos
+      arquivos → PDFs truncados marcados como erro. Passei a garantir 1 processo por etapa.
+    - *Travamento na extração:* PDFs patológicos congelavam o pdfplumber indefinidamente.
+      Extração passou a rodar em subprocesso com watchdog (90s) e pypdfium2 como motor
+      primário (mais rápido e tolerante), pdfplumber como fallback.
+    - *Deadlock do watchdog (o mais grave):* o padrão `join()` antes de `get()` na fila do
+      multiprocessing trava o filho quando o texto excede o buffer do pipe. Efeito
+      perverso: descartava sistematicamente os documentos MAIS LONGOS — justamente os
+      com maior chance de detalhar risco grave, enviesando o veto para documentos curtos.
+      Diagnóstico com amostra de 12: **12/12 recuperados** com `get()` antes de `join()`.
+      Corrigido (+ truncagem no filho) e os ~500 documentos afetados voltaram para a fila.
+
+27. **Failover Gemini validado em produção:** chave 1 esgotou a cota diária → trocou;
+    chave 2 (a inválida conhecida) devolveu 401 → **pulada** (antes o cliente a tratava
+    como erro fatal; agora 401/403 pula para a próxima chave); chave 3 assumiu.
+
+28. **Primeiro veto capturado (mecanismo completo funcionando):** MOTV3 (então CCR),
+    Fato Relevante de 28/10/2021 — decisão cautelar do TCE/PR decretando inidoneidade das
+    concessionárias no Paraná (caso RodoNorte). Classificado como
+    `intervencao_regulatoria_grave`, **citação literal validada por código** contra o
+    texto do PDF, veto aplicado de out/2021 a abr/2022 (VETO_MESES=6).
+
+29. **Quarto defeito: HTML salvo como PDF (achado em 2026-08-12).** Sob carga, a CVM
+    devolve **HTTP 200 com a página HTML "ENET Download de Documento"** em vez do PDF.
+    O código só checava o status, então gravava ~4 KB de HTML num arquivo `.pdf`; a
+    extração não achava texto e o documento virava `vazio_ou_escaneado` — e, como o
+    arquivo existia em disco com tamanho > 0, nenhuma reexecução o rebaixava: perda
+    **permanente e silenciosa** de 450 documentos (13% dos baixados).
+    Diagnóstico: os arquivos começavam com `<!DOCTYPE`, não `%PDF-`; rebaixar os mesmos
+    IDs devolveu PDF válido em 5/5 — ou seja, falha **intermitente** (rate-limiting).
+    Correção: validação da assinatura `%PDF-` no download E ao reaproveitar arquivo de
+    disco, com 3 tentativas e backoff; HTML nunca é gravado. Após o fix, a primeira
+    leva processou 91 documentos com **zero falhas** (antes: 100% de falha).
+    Lição registrada para o relatório: "HTTP 200" não é sinônimo de conteúdo válido —
+    toda coleta automática precisa validar o formato do que recebeu.
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).

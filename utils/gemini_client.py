@@ -131,15 +131,23 @@ class GeminiClient:
                     motivo_falha = "servico"
                     time.sleep(3 * (tentativa + 1))
                     continue
-                # 4xx não recuperável (400/401/403): não é cota — erro sanitizado, sem retry
+                if r.status_code in (401, 403):
+                    # chave inválida/revogada (caso conhecido: chave 2/3) — pula p/ próxima
+                    motivo_falha = "chave_invalida"
+                    break
+                # 400 etc.: problema no request em si — trocar de chave não resolve
                 raise RuntimeError(config.redigir(
                     f"Gemini devolveu HTTP {r.status_code} (chave {config.mascarar(chave)}): {r.text[:300]}"
                 ))
+            if motivo_falha == "chave_invalida":
+                print(f"[gemini] chave {config.mascarar(chave)} INVÁLIDA (401/403) — pulando", flush=True)
+                self.idx += 1
+                continue
             if motivo_falha != "cota":
                 # 5xx/rede persistente: NÃO descartar a chave — o problema é do serviço
                 raise ServicoIndisponivelError(
                     "Gemini instável (5xx/erro de rede persistente). Chaves preservadas — tente mais tarde."
                 )
-            print(f"[gemini] chave {config.mascarar(chave)} com cota estourada — trocando para a próxima")
+            print(f"[gemini] chave {config.mascarar(chave)} com cota estourada — trocando para a próxima", flush=True)
             self.idx += 1
         raise CotaEsgotadaError("Todas as chaves Gemini atingiram o limite. Parada limpa.")
