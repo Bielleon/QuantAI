@@ -403,6 +403,37 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     backtest): verifica que toda notícia contada no sinal do mês M tem registro no
     próprio mês M, e que a execução cai sempre no 1º pregão de M+1.
 
+46. **Cota do Gemini quantificada (2026-08-13):** o erro 429 informa o limite exato —
+    `GenerateRequestsPerDayPerProjectPerModel-FreeTier = **500 requisições/dia**` por
+    projeto/modelo. Consequências para o planejamento:
+    - o **veto gasta 1 requisição por documento** (documento longo, análise individual
+      com citação literal — não dá para lotear sem perder qualidade): 338 restantes = 338 req;
+    - a **classificação de sentimento gasta 1 requisição por 25 manchetes**: 35.072
+      restantes ≈ 1.403 req;
+    - total restante ≈ **1.741 requisições**; capacidade = 500/dia × nº de chaves válidas.
+    Com as 2 chaves válidas de hoje: ~2 dias. **Cada chave nova adiciona 500 req/dia
+    (= 12.500 manchetes/dia)**, então o prazo cai proporcionalmente.
+    Registro honesto: o consumo de hoje foi dominado pelo veto (1.912 requisições), o
+    que explica a classificação ter avançado só 400 manchetes.
+
+47. **Suíte de testes do motor do backtest** (`tests/test_backtest.py`, 35 verificações com
+    dados sintéticos de resposta conhecida — roda sem banco, rede ou LLM). Cobre: fórmula
+    da alocação macro nos 10 casos-limite de S e o clamp [40,80]; pesos ∝ (N+1−rank) com
+    proporção exata (N=20 → maior peso 20/210); teto de 15% com renormalização; veto
+    sobrepondo o sentimento; elegibilidade em 9 vs 10 notícias; fórmula do S; MERCADO
+    incluindo notícias não mapeadas; janela de veto de 6 meses nos 4 pontos críticos;
+    métricas contra série de resposta fechada (1,01^12−1, drawdown de −25%); acumulação
+    da Selic no intervalo (de, ate]; forward-fill que não enxerga preço futuro; e a
+    garantia de que a tendência numérica NÃO altera a decisão.
+
+48. **Defeito encontrado pelos próprios testes: empate de sentimento.** Duas empresas com
+    o MESMO S recebiam pesos muito diferentes (66,7% vs 33,3%) porque o desempate saía da
+    ordem de leitura do banco — arbitrário e não replicável. A regra travada não define
+    tratamento de empate. **Decisão registrada:** empresas com S idêntico dividem a MÉDIA
+    dos pesos do bloco empatado (tratamento padrão de empates em ranking), e a ordenação
+    ganhou desempate determinístico por ticker. Caso relevante na prática: vários S = 0,0
+    no mesmo mês. Não altera a regra — preenche uma lacuna dela.
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).

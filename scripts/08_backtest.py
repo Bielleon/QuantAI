@@ -149,6 +149,10 @@ def acumular_selic(taxa: dict, de: str, ate: str) -> float:
     return fator
 
 
+def quase_igual(a: float, b: float, tol: float = 1e-9) -> bool:
+    return abs(a - b) < tol
+
+
 def montar_carteira(indicadores: dict, universo: list[str], mes: str, variante: str,
                     precos: dict, limite_dados: date) -> dict:
     """Decide a carteira do mês M usando SOMENTE dados até o fim de M."""
@@ -179,10 +183,27 @@ def montar_carteira(indicadores: dict, universo: list[str], mes: str, variante: 
 
     if candidatas:
         # rank 1 = S mais NEGATIVA na contrária (aposta contra o humor);
-        #          S mais POSITIVA na invertida (momentum)
-        candidatas.sort(key=lambda c: c["sentimento_noticias"], reverse=(variante == "invertida"))
+        #          S mais POSITIVA na invertida (momentum).
+        # Desempate por ticker: sem isso a ordem viria do banco e o resultado não
+        # seria replicável.
+        candidatas.sort(key=lambda c: (c["sentimento_noticias"] * (1 if variante == "contraria" else -1),
+                                       c["ticker"]))
         n_cand = len(candidatas)
         pesos = [n_cand + 1 - (i + 1) for i in range(n_cand)]
+        # EMPATES: empresas com o MESMO S dividem a média dos pesos do bloco.
+        # A regra travada não define desempate; sem isso, duas empresas idênticas
+        # receberiam pesos muito diferentes (ex.: 2/3 vs 1/3) só pela ordem de leitura.
+        i = 0
+        while i < n_cand:
+            j = i
+            while j + 1 < n_cand and quase_igual(candidatas[j + 1]["sentimento_noticias"],
+                                                 candidatas[i]["sentimento_noticias"]):
+                j += 1
+            if j > i:
+                media = sum(pesos[i:j + 1]) / (j - i + 1)
+                for k in range(i, j + 1):
+                    pesos[k] = media
+            i = j + 1
         total = sum(pesos)
         pesos = [p / total for p in pesos]
         # teto de 15% + renormalização iterativa (o excedente vai para as não-tetadas)
