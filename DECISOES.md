@@ -280,6 +280,74 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     (forward-fill), padrão de mercado para falha pontual de fonte. IGTI11 tem 1.180
     pregões (estreia em 2021-11-22, conforme aprovado).
 
+---
+
+## 2026-08-12 — FASE 5 (Google News)
+
+33. **Coleta local via RSS em vez do actor Apify** (mesmo motivo da FASE 3 — aprovação
+    manual de permissões por conta). Descoberta que mudou o desenho: o RSS **aceita os
+    operadores `after:`/`before:`**, então a coleta é feita EMPRESA × MÊS e preenche o
+    histórico inteiro (2021-01 a 2026-06), não só notícias recentes. Custo R$ 0.
+    `ticker_alvo` fica NULL de propósito: quem desambigua é a entidade do LLM (regra
+    travada); a empresa buscada é registrada no log local de auditoria.
+    Dedup em camadas: url única (constraint) + (título normalizado, veículo) — cópia
+    idêntica é descartada, mesmo evento em veículos diferentes conta como distinto.
+
+34. **Calibragem das queries após teste-piloto (armadilhas da seção 4 confirmadas na
+    prática):** a query ampla trouxe **4.997 itens para B3SA3** (~76/mês) contra 396 da
+    ALUP11 — a inspeção mostrou que a maioria não era notícia SOBRE a B3, e sim notícia
+    que cita a B3 como BOLSA ("Smart Fit estreia na B3", "ações negociadas na B3") ou
+    conteúdo educativo do portal da própria B3. Três defesas adotadas:
+    - **queries específicas** para os 6 nomes ambíguos (B3SA3, MOTV3/CCR, ITUB4 vs
+      ITSA4, LREN3, ISAE4/CTEEP) usando ticker + razão social em vez do apelido curto;
+    - **bloqueio de portais institucionais** (borainvestir.b3.com.br etc.): conteúdo de
+      marketing não mede percepção de mercado;
+    - **teto de 25 notícias por empresa/mês**: a elegibilidade exige ≥10, então 25 dá
+      margem confortável; sem teto, uma empresa sozinha consumiria a cota do Gemini
+      (gargalo real do projeto) com ruído que o LLM descartaria depois.
+    O lote não calibrado (5.884 notícias) foi apagado e a coleta reiniciada do zero.
+    Registrado como decisão metodológica: a precisão da coleta serve à economia de
+    cota; a correção do sinal continua vindo da desambiguação por LLM.
+
+35. **Pré-filtro de risco por código (FASE 4) — decisão metodológica.** Medição: enviar
+    os 5.065 documentos ao LLM custaria **8,3M tokens**, inviável na cota gratuita
+    (chave 1 em 429/cota, chave 2 inválida, chave 3 em 503/sobrecarga). Um documento que
+    não cita NENHUM termo ligado às 5 categorias de risco grave não pode ser um veto,
+    então é descartado por CÓDIGO antes do LLM. Resultado: **3.319 → 504 documentos
+    (−85%)**. Salvaguardas:
+    - lista de ~45 termos deliberadamente GENEROSA (prioriza recall sobre precisão);
+    - **validada contra o veto conhecido**: o caso MOTV3/RodoNorte passa no filtro
+      (casa "tribunal de contas") — se não passasse, a lista seria refeita;
+    - status próprio `sem_indicio_risco` (migração aplicada) em vez de 'classificado':
+      a auditoria distingue "o LLM analisou e não achou" de "nem foi ao LLM";
+    - o código NUNCA decide que algo É veto; só decide o que claramente não é nada.
+      O LLM continua sendo o único juiz do risco grave (regra travada preservada).
+
+---
+
+## 2026-08-13 — FASE 5 concluída (cobertura)
+
+36. **Coleta Google News finalizada:** 22.137 notícias novas, 1.654 cópias descartadas
+    pela dedup, 1.320 requisições, 0 falhas, **custo R$ 0**. Corpus total de mídia:
+    **35.592 notícias** (13.455 GDELT + 22.137 Google News).
+
+37. **Cobertura provisória** (`outputs/cobertura_provisoria.csv`): 951 de 1.320 pares
+    empresa-mês passam da regra de ≥10 notícias (72%). Método declarado como PROVISÓRIO:
+    usa a empresa buscada (Google News) e casamento de apelido por palavra inteira
+    (GDELT); a atribuição definitiva vem da entidade do LLM na FASE 7.
+    - Sempre elegíveis (100% dos meses): PETR4, ITUB4, BPAC11, FLRY3, IGTI11, POMO4, SBSP3.
+    - Cronicamente abaixo do limiar: TAEE11 (21%), ALUP11 (23%), ISAE4 (26%), GRND3 (32%)
+      — small caps de utilities/calçados com pouca cobertura de mídia. NÃO devem sair do
+      universo: a regra de elegibilidade já as exclui automaticamente nos meses fracos,
+      que é exatamente o comportamento desejado (sem notícia, sem sinal).
+
+38. **Viés de cobertura crescente (limitação declarada para o relatório):** o número de
+    empresas elegíveis cresce de ~11/20 em 2021 para 20/20 em 2026, porque a indexação
+    do Google News é mais densa para conteúdo recente. Efeito prático: a carteira tende
+    a ser mais concentrada no início do backtest e mais diversificada no fim. Não é
+    look-ahead (nenhum dado futuro entra no sinal do mês), mas muda o regime da
+    estratégia ao longo do tempo e precisa ser dito no relatório.
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).

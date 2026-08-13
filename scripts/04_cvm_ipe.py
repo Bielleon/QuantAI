@@ -290,6 +290,59 @@ def etapa_pdfs(retentar_erros: bool = False):
     print(f"\nResultado: {contagem}", flush=True)
 
 
+# ---------- PRÉ-FILTRO DE RISCO ----------
+# Motivo (DECISOES.md item 35): mandar os 5.065 documentos ao LLM custaria ~8,3M
+# tokens — inviável na cota gratuita. Um documento que não cita NENHUM termo
+# relacionado às 5 categorias de risco grave não pode ser um veto; ele é
+# descartado por CÓDIGO (status 'sem_indicio_risco'), sem consumir cota.
+# A lista é deliberadamente GENEROSA (prioriza recall): qualquer indício manda o
+# documento ao LLM, que continua sendo o único juiz do que é risco grave.
+_TERMOS_RISCO = [
+    # recuperação judicial / falência
+    "recuperacao judicial", "recuperacao extrajudicial", "falencia", "insolven", "concordata",
+    # fraude / irregularidade contábil
+    "fraude", "fraudulent", "irregularidade contabil", "manipulacao", "desvio de recurso",
+    "malversacao", "republicacao das demonstracoes", "reapresentacao das demonstracoes",
+    "erro contabil", "acordo de leniencia", "corrupcao", "lavagem de dinheiro", "improbidade",
+    "delacao", "busca e apreensao", "policia federal", "operacao da",
+    # dúvida sobre continuidade
+    "continuidade operacional", "continuidade dos negocios", "going concern", "descontinuidade",
+    "impairment relevante", "prejuizo recorrente", "deterioracao",
+    # default / inadimplência
+    "default", "inadimplen", "inadimplem", "vencimento antecipado", "covenant", "waiver",
+    "moratoria", "calote",
+    # intervenção regulatória grave
+    "intervencao", "liquidacao extrajudicial", "cassacao", "inidonei", "caducidade",
+    "suspensao da concessao", "revogacao da concessao", "medida cautelar", "afastamento do",
+    "tribunal de contas", "cvm instaurou", "processo administrativo sancionador",
+]
+PADRAO_RISCO = re.compile("|".join(_TERMOS_RISCO))
+PREFILTRO_VERSAO = "v1-2026-08-13"
+
+
+def _sem_acento(texto: str) -> str:
+    return unicodedata.normalize("NFKD", texto or "").encode("ascii", "ignore").decode().lower()
+
+
+def tem_indicio_de_risco(texto: str) -> bool:
+    return bool(PADRAO_RISCO.search(_sem_acento(texto)))
+
+
+def etapa_prefiltro():
+    """Marca como 'sem_indicio_risco' os documentos sem qualquer termo de risco."""
+    fila = db.selecionar("documentos_cvm",
+                         {"status_processamento": "eq.extraido", "select": "id,texto_extraido"},
+                         order="id")
+    descartados = [d["id"] for d in fila if not tem_indicio_de_risco(d["texto_extraido"])]
+    print(f"Documentos analisados: {len(fila)} | sem indício de risco: {len(descartados)} "
+          f"({100 * len(descartados) / max(1, len(fila)):.0f}%) | vão ao LLM: {len(fila) - len(descartados)}")
+    for i in range(0, len(descartados), 200):
+        ids = ",".join(str(x) for x in descartados[i:i + 200])
+        db.atualizar("documentos_cvm", {"id": f"in.({ids})"},
+                     {"status_processamento": "sem_indicio_risco"})
+    print(f"Fila do LLM agora: {db.contar('documentos_cvm', {'status_processamento': 'eq.extraido'})}")
+
+
 # ---------- etapa VETO ----------
 
 def _json_da_resposta(texto: str) -> dict | None:
@@ -366,7 +419,7 @@ def etapa_veto(piloto: int | None = None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("etapa", choices=["metadados", "pdfs", "veto"])
+    parser.add_argument("etapa", choices=["metadados", "pdfs", "prefiltro", "veto"])
     parser.add_argument("--piloto", type=int, default=None, help="(veto) classifica só N documentos")
     parser.add_argument("--retentar", action="store_true", help="(pdfs) reprocessa também erro_download")
     args = parser.parse_args()
@@ -374,5 +427,7 @@ if __name__ == "__main__":
         etapa_metadados()
     elif args.etapa == "pdfs":
         etapa_pdfs(retentar_erros=args.retentar)
+    elif args.etapa == "prefiltro":
+        etapa_prefiltro()
     else:
         etapa_veto(piloto=args.piloto)
