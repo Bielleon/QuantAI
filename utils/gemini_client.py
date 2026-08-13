@@ -80,11 +80,18 @@ def testar_chave(chave: str) -> dict:
 class GeminiClient:
     """Gera texto com o modelo PINADO, failover de chaves e contagem de tokens."""
 
-    def __init__(self, endpoints_por_chave: dict[str, str] | None = None):
+    def __init__(self, endpoints_por_chave: dict[str, str] | None = None,
+                 modelo: str | None = None):
+        """`modelo`: sobrescreve o pinado principal. A cota é 500/dia POR MODELO, então
+        tarefas que não geram o sinal S (veto, cartas) podem usar um segundo modelo
+        pinado sem consumir a cota do sentimento. Nunca aceita alias '-latest'."""
         self.chaves = list(config.GEMINI_API_KEYS)
         # endpoint de cada chave ('gl' ou 'vertex'); health check confirmou 'gl' p/ as chaves AQ.
         self.endpoints = endpoints_por_chave or {c: "gl" for c in self.chaves}
         self.idx = 0
+        if modelo and modelo.endswith("-latest"):
+            raise RuntimeError(f"modelo '{modelo}' é alias flutuante — use um nome fixo (replicabilidade)")
+        self.modelo = modelo
 
     def gerar(self, prompt: str, temperature: float | None = None,
               max_tentativas_por_chave: int = 3) -> dict:
@@ -96,12 +103,12 @@ class GeminiClient:
         """
         if temperature is None:
             temperature = config.LLM_TEMPERATURE
-        if not config.GEMINI_MODEL_PINNED:
+        if not (self.modelo or config.GEMINI_MODEL_PINNED):
             raise RuntimeError(
                 "GEMINI_MODEL_PINNED vazio no .env — rode scripts/00_health_check.py antes. "
                 "Regra travada: nunca usar o alias -latest em produção (replicabilidade)."
             )
-        modelo = config.GEMINI_MODEL_PINNED
+        modelo = self.modelo or config.GEMINI_MODEL_PINNED
 
         while self.idx < len(self.chaves):
             chave = self.chaves[self.idx]

@@ -101,13 +101,15 @@ def teste_pesos_por_rank():
 
     c = bt.montar_carteira(ind, universo, "2024-01", "contraria", precos, limite)
     pesos = pesos_da_carteira(c)
-    # N=3: pesos brutos 3,2,1 -> 0,5 / 0,333 / 0,167 (nenhum acima do teto de 15%? 50% > 15%!)
-    # com teto de 15% e só 3 candidatas, TODAS batem no teto e a soma não fecha 1 —
-    # o comportamento correto é distribuir igualmente respeitando o teto até onde der.
-    checar(quase(sum(pesos.values()), 1.0, 1e-6), "soma dos pesos = 1",
+    # N=3 com teto de 15%: 3 × 15% = 45% < 100%, então o teto TRAVA todas e a soma
+    # fica em 0,45 de propósito — a sobra da RV vai para o Tesouro Selic.
+    checar(all(p <= config.TETO_PESO_ACAO + 1e-9 for p in pesos.values()),
+           "N=3: teto respeitado (não existe peso de 50%)", f"pesos={pesos}")
+    checar(quase(sum(pesos.values()), 3 * config.TETO_PESO_ACAO, 1e-6),
+           "N=3: soma = 3 × 15% = 45% (resto vai p/ renda fixa)",
            f"obtido {sum(pesos.values()):.6f}")
     checar(pesos["AAAA3"] >= pesos["BBBB3"] >= pesos["CCCC3"],
-           "contrária: S mais NEGATIVA recebe o maior peso",
+           "contrária: S mais NEGATIVA recebe peso >= das demais",
            f"A={pesos['AAAA3']:.3f} B={pesos['BBBB3']:.3f} C={pesos['CCCC3']:.3f}")
 
     c = bt.montar_carteira(ind, universo, "2024-01", "invertida", precos, limite)
@@ -164,8 +166,12 @@ def teste_veto_e_elegibilidade():
     checar(por_ticker["CCCC3"]["classificacao_final"] == "inelegivel_poucas_noticias"
            and por_ticker["CCCC3"]["peso"] == 0,
            "empresa com 9 notícias (< 10) fica FORA", str(por_ticker["CCCC3"]))
-    checar(quase(por_ticker["BBBB3"]["peso"], 1.0),
-           "sobrando 1 elegível, ela leva 100% da RV", f"obtido {por_ticker['BBBB3']['peso']}")
+    # CORRIGIDO: a versão anterior deste teste afirmava que 1 elegível leva 100% da RV —
+    # isso codificava o BUG do teto como se fosse a regra. O teto de 15% é um limite de
+    # risco e vale sempre; com 1 elegível ela leva 15% e o resto da RV vai para a Selic.
+    checar(quase(por_ticker["BBBB3"]["peso"], config.TETO_PESO_ACAO),
+           "com 1 elegível, o teto de 15% CONTINUA valendo (resto vai p/ Selic)",
+           f"obtido {por_ticker['BBBB3']['peso']}")
     checar(por_ticker["AAAA3"]["flags_relatorio"] == "veto_ativo",
            "posição vetada registra a flag para auditoria")
 
@@ -315,6 +321,128 @@ def teste_tendencia_nao_decide():
            "sinal da tendência bate com o movimento dos preços", str(tend))
 
 
+def teste_teto_e_monotonia_todos_os_N():
+    """Regressão dos bugs da auditoria: para TODO N o teto vale e o peso nunca
+    aumenta com o rank (a pior colocada jamais leva mais que a primeira)."""
+    print("\n== Regressão: teto e monotonia para N = 1..20 ==")
+    problemas_teto, problemas_ordem = [], []
+    for n in range(1, 21):
+        universo = [f"T{i:02d}A3" for i in range(n)]
+        precos = precos_de(universo)
+        # S estritamente decrescente -> ranks bem definidos, sem empate
+        emp = {t: (-0.9 + i * (1.8 / max(1, n)), 20, False) for i, t in enumerate(universo)}
+        c = bt.montar_carteira(indicadores_de(0.0, emp), universo, "2024-01", "contraria",
+                               precos, date(2024, 1, 31))
+        ordenados = [p for p in c["posicoes"] if p["classificacao_final"] == "carteira"]
+        ordenados.sort(key=lambda p: p["sentimento_noticias"])  # rank 1 = S mais negativa
+        pesos = [p["peso"] for p in ordenados]
+        if any(p > config.TETO_PESO_ACAO + 1e-9 for p in pesos):
+            problemas_teto.append(f"N={n} máx={max(pesos):.3f}")
+        if any(pesos[i] < pesos[i + 1] - 1e-9 for i in range(len(pesos) - 1)):
+            problemas_ordem.append(f"N={n} pesos={[round(p,3) for p in pesos]}")
+    checar(not problemas_teto, "teto de 15% respeitado para N = 1..20",
+           "; ".join(problemas_teto[:4]))
+    checar(not problemas_ordem, "peso nunca cresce com o rank (sem inversão) para N = 1..20",
+           "; ".join(problemas_ordem[:4]))
+
+    # N=4 é o caso que invertia a ordenação: rank 4 ficava com 0,55 e rank 1 com 0,15
+    universo = ["AAAA3", "BBBB3", "CCCC3", "DDDD3"]
+    precos = precos_de(universo)
+    emp = {"AAAA3": (-0.9, 20, False), "BBBB3": (-0.3, 20, False),
+           "CCCC3": (0.3, 20, False), "DDDD3": (0.9, 20, False)}
+    c = bt.montar_carteira(indicadores_de(0.0, emp), universo, "2024-01", "contraria",
+                           precos, date(2024, 1, 31))
+    p = {x["ticker"]: x["peso"] for x in c["posicoes"]}
+    checar(p["DDDD3"] <= p["AAAA3"] + 1e-9,
+           "N=4: a ação de S mais POSITIVO não leva mais peso que a de S mais negativo "
+           "(bug da inversão)", f"A(-0,9)={p['AAAA3']:.3f} D(+0,9)={p['DDDD3']:.3f}")
+
+
+def teste_serie_alinhada_com_benchmark():
+    """Robô 100% em Selic tem de render EXATAMENTE o benchmark Selic.
+    É o teste que expõe desalinhamento de datas entre as duas séries."""
+    print("\n== Série do robô alinhada com a dos benchmarks ==")
+    dias = [f"2024-{m:02d}-{d:02d}" for m in range(1, 7) for d in range(1, 29)]
+    precos = {"^BVSP": {d: 100.0 for d in dias}}
+    taxa = {d: 0.001 for d in dias}
+    dados = {"universo": [], "precos": precos, "taxa": taxa,
+             "mes_da_noticia": {}, "sentimentos": [], "flags": []}
+    # sem universo => nenhuma ação elegível => 100% Tesouro Selic
+    ini, fim = config.BACKTEST_INICIO, config.BACKTEST_FIM
+    custo = config.CUSTO_TURNOVER
+    config.BACKTEST_INICIO, config.BACKTEST_FIM = "2024-01", "2024-04"
+    # custo zerado de propósito: aqui testamos ALINHAMENTO de datas/valores.
+    # Com custo ligado o robô fica legitimamente abaixo do benchmark (paga para
+    # rebalancear, o benchmark não), e a diferença mascararia o que queremos medir.
+    config.CUSTO_TURNOVER = 0.0
+    try:
+        r = bt.rodar_backtest(dados, {}, "contraria")
+        b = bt.benchmarks(dados)
+        v_robo = r["serie"][-1]["patrimonio"]
+        v_selic = b["selic"][-1]["patrimonio"]
+        checar(quase(v_robo, v_selic, 1e-9),
+               "robô 100% Selic == benchmark Selic (mesmas datas, mesmo ativo)",
+               f"robô={v_robo:.8f} selic={v_selic:.8f}")
+        datas_robo = [p["data"] for p in r["serie"]]
+        datas_bench = [p["data"] for p in b["selic"]]
+        checar(datas_robo == datas_bench, "as duas séries usam exatamente as mesmas datas",
+               f"robô={datas_robo[:3]}... bench={datas_bench[:3]}...")
+        m_robo = bt.metricas(r["serie"], taxa)
+        checar(quase(m_robo["sharpe"], 0.0, 1e-6),
+               "Sharpe de carteira 100% Selic = 0 (excesso nulo sobre a própria Selic)",
+               f"obtido {m_robo['sharpe']:.4f}")
+    finally:
+        config.BACKTEST_INICIO, config.BACKTEST_FIM = ini, fim
+        config.CUSTO_TURNOVER = custo
+
+    # com o custo LIGADO, o robô tem de ficar abaixo do benchmark — e a diferença
+    # precisa ser da ordem do custo cobrado, não maior
+    config.BACKTEST_INICIO, config.BACKTEST_FIM = "2024-01", "2024-04"
+    try:
+        r2 = bt.rodar_backtest(dados, {}, "contraria")
+        b2 = bt.benchmarks(dados)
+        dif = b2["selic"][-1]["patrimonio"] - r2["serie"][-1]["patrimonio"]
+        checar(0 < dif < 0.01,
+               "com custo ligado, robô fica ABAIXO da Selic pela ordem de grandeza do custo",
+               f"diferença={dif:.6f}")
+    finally:
+        config.BACKTEST_INICIO, config.BACKTEST_FIM = ini, fim
+
+
+def teste_por_ano_credita_mes_certo():
+    print("\n== Retorno anual creditado ao ano do PERÍODO, não ao do fim ==")
+    # +50% no período que começa em 01/12/2021 e termina em 03/01/2022 => é retorno de 2021
+    serie = [{"data": "2021-12-01", "patrimonio": 1.0},
+             {"data": "2022-01-03", "patrimonio": 1.5}]
+    m = bt.metricas(serie, {})
+    checar(quase(m["por_ano"].get("2021", 0.0), 0.5, 1e-6),
+           "retorno de dezembro/2021 é creditado a 2021", f"por_ano={m['por_ano']}")
+    checar(quase(m["por_ano"].get("2022", 0.0), 0.0, 1e-9),
+           "nada é creditado a 2022", f"por_ano={m['por_ano']}")
+
+
+def teste_custo_do_primeiro_mes_conta():
+    """O custo e o retorno do 1º rebalanceamento não podem sumir das métricas."""
+    print("\n== Custo do 1º rebalanceamento entra nas métricas ==")
+    dias = [f"2024-{m:02d}-{d:02d}" for m in range(1, 7) for d in range(1, 29)]
+    precos = {"^BVSP": {d: 100.0 for d in dias}}
+    dados = {"universo": [], "precos": precos, "taxa": {d: 0.0 for d in dias},
+             "mes_da_noticia": {}, "sentimentos": [], "flags": []}
+    ini, fim = config.BACKTEST_INICIO, config.BACKTEST_FIM
+    config.BACKTEST_INICIO, config.BACKTEST_FIM = "2024-01", "2024-03"
+    try:
+        r = bt.rodar_backtest(dados, {}, "contraria")
+        checar(quase(r["serie"][0]["patrimonio"], 1.0, 1e-12),
+               "série começa em 1,00 (antes de qualquer custo)",
+               f"obtido {r['serie'][0]['patrimonio']}")
+        # sem ações e sem juros, o patrimônio só pode cair pelos custos de turnover
+        checar(r["serie"][-1]["patrimonio"] <= 1.0 + 1e-12,
+               "com Selic zero, custos aparecem como queda no patrimônio",
+               f"final={r['serie'][-1]['patrimonio']:.8f}")
+    finally:
+        config.BACKTEST_INICIO, config.BACKTEST_FIM = ini, fim
+
+
 def main():
     print("=== Testes do motor do backtest (dados sintéticos) ===")
     teste_alocacao_macro()
@@ -329,6 +457,10 @@ def main():
     teste_selic_acumulada()
     teste_forward_fill_nao_ve_futuro()
     teste_tendencia_nao_decide()
+    teste_teto_e_monotonia_todos_os_N()
+    teste_serie_alinhada_com_benchmark()
+    teste_por_ano_credita_mes_certo()
+    teste_custo_do_primeiro_mes_conta()
 
     print("\n" + "=" * 60)
     if FALHAS:

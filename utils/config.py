@@ -23,6 +23,12 @@ SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
 APIFY_TOKENS = [t.strip() for t in os.environ.get("APIFY_TOKENS", "").split(",") if t.strip()]
 GEMINI_API_KEYS = [k.strip() for k in os.environ.get("GEMINI_API_KEYS", "").split(",") if k.strip()]
 GEMINI_MODEL_PINNED = os.environ.get("GEMINI_MODEL_PINNED", "").strip()
+# Modelo SECUNDÁRIO (também pinado, sem alias -latest). A cota gratuita é de 500
+# requisições/dia POR MODELO, então usar um segundo modelo dobra a capacidade.
+# Uso aprovado pelo humano em 2026-08-13 APENAS para veto e cartas — o sentimento,
+# que gera o sinal S do backtest, continua 100% no modelo pinado principal.
+# Ver DECISOES.md item 49.
+GEMINI_MODEL_SECUNDARIO = os.environ.get("GEMINI_MODEL_SECUNDARIO", "gemini-3.5-flash-lite").strip()
 
 # Parâmetros de negócio travados (seção 8 do prompt mestre — mudar SÓ com aprovação registrada)
 VETO_MESES = 6

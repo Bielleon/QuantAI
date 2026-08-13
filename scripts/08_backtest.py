@@ -206,18 +206,28 @@ def montar_carteira(indicadores: dict, universo: list[str], mes: str, variante: 
             i = j + 1
         total = sum(pesos)
         pesos = [p / total for p in pesos]
-        # teto de 15% + renormalização iterativa (o excedente vai para as não-tetadas)
-        for _ in range(50):
+        # Teto de 15% com redistribuição do excedente para as não-tetadas.
+        # O corte min(p, TETO) vem ANTES de qualquer saída do laço: com N <= 6 é
+        # matematicamente impossível todos ficarem <= 15% E somarem 1 (6×15% = 90%),
+        # e a versão anterior escapava do laço sem aplicar o teto — deixando, por
+        # exemplo, 100% da RV numa única ação. Quando o teto trava para todas, a
+        # soma fica < 1 de propósito: a sobra da RV vai para o Tesouro Selic
+        # (mecanismo já aprovado no item 44). Ver DECISOES.md item 50.
+        for _ in range(100):
             excedente = sum(p - config.TETO_PESO_ACAO for p in pesos if p > config.TETO_PESO_ACAO)
             if excedente <= 1e-12:
                 break
+            pesos = [min(p, config.TETO_PESO_ACAO) for p in pesos]
             livres = [i for i, p in enumerate(pesos) if p < config.TETO_PESO_ACAO - 1e-12]
             if not livres:
-                break
-            pesos = [min(p, config.TETO_PESO_ACAO) for p in pesos]
-            soma_livres = sum(pesos[i] for i in livres) or 1.0
-            for i in livres:
-                pesos[i] += excedente * pesos[i] / soma_livres
+                break  # teto trava todas: soma < 1, sobra vai para a renda fixa
+            soma_livres = sum(pesos[i] for i in livres)
+            if soma_livres <= 1e-12:
+                for i in livres:
+                    pesos[i] += excedente / len(livres)
+            else:
+                for i in livres:
+                    pesos[i] += excedente * pesos[i] / soma_livres
         for c, p in zip(candidatas, pesos):
             c["peso"] = round(p, 6)
             c["classificacao_final"] = "carteira" if p > 1e-9 else "fora_por_rank"
@@ -229,18 +239,29 @@ def montar_carteira(indicadores: dict, universo: list[str], mes: str, variante: 
 
 
 def rodar_backtest(dados: dict, indicadores: dict, variante: str) -> dict:
-    """Devolve série de patrimônio + carteiras + turnover. Custo de 0,1% no turnover."""
+    """Devolve série de patrimônio + carteiras + turnover. Custo de 0,1% no turnover.
+
+    CONVENÇÃO DA SÉRIE (igual à de benchmarks(), para que a comparação seja válida):
+    o ponto na data d_i contém o patrimônio JÁ com tudo que aconteceu ATÉ d_i.
+    O primeiro ponto vale 1,0 na primeira data de execução, ANTES de qualquer
+    custo — assim o custo e o retorno do 1º rebalanceamento entram nas métricas.
+    A versão anterior gravava em d_i o patrimônio que só existia em d_(i+1),
+    adiantando a curva do robô em um mês frente aos benchmarks (DECISOES.md item 51).
+    """
     precos, taxa = dados["precos"], dados["taxa"]
     universo = dados["universo"]
     meses = meses_do_backtest()
+    datas_exec = [d for d in (primeiro_pregao_de(precos, mes_seguinte(m)) for m in meses) if d]
+    if not datas_exec:
+        return {"serie": [], "carteiras": [], "alocacao": [], "turnover_medio": 0.0}
 
     patrimonio = 1.0
-    pesos_anteriores: dict[str, float] = {}
-    pct_rv_anterior = 0.0
-    serie, carteiras, turnovers = [], [], []
-    data_execucao_anterior = None
+    pesos_carregados: dict[str, float] = {}   # pesos REAIS na virada (já com drift de preço)
+    peso_rf_carregado = 0.0
+    serie = [{"data": datas_exec[0], "patrimonio": 1.0}]
+    carteiras, turnovers, alocacao = [], [], []
 
-    for mes in meses:
+    for i, mes in enumerate(meses):
         mes_exec = mes_seguinte(mes)
         dia_exec = primeiro_pregao_de(precos, mes_exec)
         if not dia_exec:
@@ -252,41 +273,48 @@ def rodar_backtest(dados: dict, indicadores: dict, variante: str) -> dict:
 
         pesos_novos = {p["ticker"]: p["peso"] * carteira["pct_rv"]
                        for p in carteira["posicoes"] if p["peso"] > 0}
-        # A parcela de RV que não encontrou ação elegível NÃO fica como dinheiro
-        # parado: vai para o Tesouro Selic, que é o que um gestor faria de fato.
-        # Sem isso, meses sem empresa elegível renderiam zero e subestimariam a
-        # estratégia (ver DECISOES.md item 44).
+        # A parcela de RV sem ação elegível (ou barrada pelo teto) vai para o Tesouro
+        # Selic — não fica como dinheiro parado (DECISOES.md item 44).
         rv_investido = sum(pesos_novos.values())
         peso_rf = 1.0 - rv_investido
         carteira["pct_rv_efetivo"] = round(rv_investido, 6)
-        # turnover = metade da soma das variações absolutas de peso (compra + venda)
-        tickers_uniao = set(pesos_novos) | set(pesos_anteriores)
-        turnover = sum(abs(pesos_novos.get(t, 0) - pesos_anteriores.get(t, 0)) for t in tickers_uniao)
-        turnover += abs(peso_rf - (1 - pct_rv_anterior))
+
+        # Turnover contra a carteira REALMENTE carregada (com drift de preço), não
+        # contra o alvo do mês anterior — senão o custo do rebalanceamento é
+        # subestimado (DECISOES.md item 52).
+        tickers_uniao = set(pesos_novos) | set(pesos_carregados)
+        turnover = sum(abs(pesos_novos.get(t, 0) - pesos_carregados.get(t, 0)) for t in tickers_uniao)
+        turnover += abs(peso_rf - peso_rf_carregado)
         turnover /= 2
         turnovers.append(turnover)
         patrimonio *= (1 - config.CUSTO_TURNOVER * turnover)
 
-        # rendimento até a próxima execução
-        proximo_mes_exec = mes_seguinte(mes_exec)
-        dia_saida = primeiro_pregao_de(precos, proximo_mes_exec) or dia_exec
-        if dia_saida > dia_exec:
-            retorno_rv = 0.0
-            for ticker, peso in pesos_novos.items():
-                p0, p1 = preco_em(precos, ticker, dia_exec), preco_em(precos, ticker, dia_saida)
-                if p0 and p1:
-                    retorno_rv += peso * (p1 / p0 - 1)
-            fator_rf = acumular_selic(taxa, dia_exec, dia_saida)
-            retorno_rf = peso_rf * (fator_rf - 1)
-            patrimonio *= (1 + retorno_rv + retorno_rf)
+        alocacao.append({"data": dia_exec, "mes_sinal": mes, "pct_rv": carteira["pct_rv"],
+                         "pct_rv_efetivo": rv_investido, "n_acoes": len(pesos_novos)})
 
-        serie.append({"data": dia_exec, "patrimonio": patrimonio, "mes_sinal": mes,
-                      "pct_rv": carteira["pct_rv"], "pct_rv_efetivo": rv_investido,
-                      "n_acoes": len(pesos_novos)})
-        pesos_anteriores, pct_rv_anterior = pesos_novos, rv_investido
-        data_execucao_anterior = dia_exec
+        # rendimento do período até a próxima execução
+        dia_saida = datas_exec[i + 1] if i + 1 < len(datas_exec) else None
+        if not dia_saida or dia_saida <= dia_exec:
+            break
+        retorno_rv = 0.0
+        pesos_derivados: dict[str, float] = {}
+        for ticker, peso in pesos_novos.items():
+            p0, p1 = preco_em(precos, ticker, dia_exec), preco_em(precos, ticker, dia_saida)
+            fator = (p1 / p0) if (p0 and p1) else 1.0
+            retorno_rv += peso * (fator - 1)
+            pesos_derivados[ticker] = peso * fator
+        fator_rf = acumular_selic(taxa, dia_exec, dia_saida)
+        retorno_rf = peso_rf * (fator_rf - 1)
+        retorno_total = retorno_rv + retorno_rf
+        patrimonio *= (1 + retorno_total)
+        serie.append({"data": dia_saida, "patrimonio": patrimonio})
 
-    return {"serie": serie, "carteiras": carteiras,
+        # normaliza os pesos derivados para o novo patrimônio (drift)
+        base = 1 + retorno_total
+        pesos_carregados = {t: p / base for t, p in pesos_derivados.items()}
+        peso_rf_carregado = (peso_rf * fator_rf) / base
+
+    return {"serie": serie, "carteiras": carteiras, "alocacao": alocacao,
             "turnover_medio": sum(turnovers) / len(turnovers) if turnovers else 0.0}
 
 
@@ -347,9 +375,12 @@ def metricas(serie: list[dict], taxa: dict, turnover_medio: float = 0.0) -> dict
         pico = max(pico, v)
         dd_max = min(dd_max, v / pico - 1)
 
+    # o retorno do intervalo (datas[i-1], datas[i]] pertence ao mês/ano de datas[i-1]:
+    # o período que começa em 01/12/2021 e vai até 03/01/2022 é o retorno de DEZEMBRO
+    # de 2021 (antes era creditado a 2022 — DECISOES.md item 53)
     por_ano: dict[str, float] = {}
     for i in range(1, len(datas)):
-        ano = datas[i][:4]
+        ano = datas[i - 1][:4]
         por_ano[ano] = (1 + por_ano.get(ano, 0.0)) * (1 + retornos[i - 1]) - 1
 
     return {"retorno_total": retorno_total, "cagr": cagr, "vol_anual": vol_anual,
@@ -360,29 +391,72 @@ def metricas(serie: list[dict], taxa: dict, turnover_medio: float = 0.0) -> dict
 
 # ---------------- 5. teste anti-look-ahead ----------------
 
-def teste_anti_look_ahead(dados: dict, carteiras: list[dict]) -> None:
-    """Garante que nenhum dado posterior ao fim do mês M entrou no sinal de M."""
-    print("\n=== Teste anti-look-ahead ===")
-    meses_noticias = defaultdict(set)
+def _recontar_noticias(dados: dict) -> dict[tuple[str, str], int]:
+    """Recontagem INDEPENDENTE (ticker, mês) direto dos dados brutos."""
+    contagem: dict[tuple[str, str], int] = defaultdict(int)
     for s in dados["sentimentos"]:
         mes = dados["mes_da_noticia"].get(s["noticia_id"])
         if mes and s["ticker_mapeado"]:
-            meses_noticias[s["ticker_mapeado"]].add(mes)
+            contagem[(s["ticker_mapeado"], mes)] += 1
+    return contagem
 
+
+def _violacoes_look_ahead(dados: dict, carteiras: list[dict]) -> list[str]:
+    """Compara o n_noticias usado em cada carteira com a recontagem independente
+    restrita ao PRÓPRIO mês do sinal. Se o sinal do mês M tiver contado qualquer
+    notícia de outro mês, os números divergem e a violação aparece aqui."""
+    esperado = _recontar_noticias(dados)
     falhas = []
     for c in carteiras:
         mes = c["mes"]
+        mes_exec = mes_seguinte(mes)
         for p in c["posicoes"]:
-            if p["n_noticias"] > 0:
-                # toda notícia contada tem de ser do próprio mês do sinal
-                if mes not in meses_noticias.get(p["ticker"], set()):
-                    falhas.append(f"{p['ticker']} {mes}: contou notícias sem registro no mês")
-        dia_exec = primeiro_pregao_de(dados["precos"], mes_seguinte(mes))
-        if dia_exec and dia_exec[:7] != mes_seguinte(mes):
+            if p["n_noticias"] != esperado.get((p["ticker"], mes), 0):
+                falhas.append(f"{p['ticker']} {mes}: usou {p['n_noticias']} notícias, "
+                              f"mas o mês tem {esperado.get((p['ticker'], mes), 0)}")
+        dia_exec = primeiro_pregao_de(dados["precos"], mes_exec)
+        if dia_exec and dia_exec[:7] != mes_exec:
             falhas.append(f"{mes}: execução fora de M+1 ({dia_exec})")
+    return falhas
+
+
+def teste_anti_look_ahead(dados: dict, carteiras: list[dict], indicadores: dict,
+                          universo: list[str], variante: str) -> None:
+    """Garante que nenhum dado posterior ao fim do mês M entrou no sinal de M.
+
+    O teste tem DUAS partes. A primeira compara o sinal usado com uma recontagem
+    independente. A segunda é um teste de MUTAÇÃO: injeta um look-ahead artificial
+    (desloca as notícias um mês para trás, de modo que o sinal de M passe a
+    enxergar notícias de M+1) e exige que a checagem ACUSE. Sem essa segunda
+    parte o teste poderia ser vacuamente verdadeiro — foi exatamente o que
+    aconteceu com a versão anterior (DECISOES.md item 54).
+    """
+    print("\n=== Teste anti-look-ahead ===")
+    falhas = _violacoes_look_ahead(dados, carteiras)
     assert not falhas, "LOOK-AHEAD DETECTADO:\n" + "\n".join(falhas[:10])
-    print(f"  [OK] {len(carteiras)} carteiras: sinais usam só dados do próprio mês, "
+    print(f"  [OK] {len(carteiras)} carteiras: n_noticias bate com a recontagem do próprio mês; "
           f"execução sempre no 1º pregão de M+1")
+
+    # --- mutação: o teste consegue mesmo detectar um look-ahead? ---
+    meses_ordenados = meses_do_backtest()
+    anterior = {m: meses_ordenados[i - 1] for i, m in enumerate(meses_ordenados) if i > 0}
+    dados_mutados = dict(dados)
+    dados_mutados["mes_da_noticia"] = {nid: anterior.get(mes, mes)
+                                       for nid, mes in dados["mes_da_noticia"].items()}
+    ind_mutados = calcular_indicadores(dados_mutados)
+    carteiras_mutadas = []
+    for mes in meses_ordenados:
+        dia_exec = primeiro_pregao_de(dados["precos"], mes_seguinte(mes))
+        if not dia_exec:
+            continue
+        limite = primeiro_dia(mes_seguinte(mes)) - timedelta(days=1)
+        carteiras_mutadas.append(
+            montar_carteira(ind_mutados, universo, mes, variante, dados["precos"], limite))
+    detectou = _violacoes_look_ahead(dados, carteiras_mutadas)
+    assert detectou, ("O teste anti-look-ahead NÃO detectou um look-ahead injetado de "
+                      "propósito — ele é vacuamente verdadeiro e não prova nada.")
+    print(f"  [OK] mutação: look-ahead injetado foi DETECTADO ({len(detectou)} violações) — "
+          f"o teste tem poder de detecção")
 
 
 # ---------------- 6. saídas ----------------
@@ -432,9 +506,9 @@ def gerar_graficos(resultados: dict, bench: dict) -> None:
 
     # 2. alocação RV x RF no tempo
     fig, ax = plt.subplots(figsize=(11, 4))
-    s = resultados["contraria"]["serie"]
+    s = resultados["contraria"]["alocacao"]
     datas = [p["data"] for p in s]
-    rv = [p.get("pct_rv_efetivo", p["pct_rv"]) * 100 for p in s]
+    rv = [p["pct_rv_efetivo"] * 100 for p in s]
     ax.fill_between(datas, 0, rv, label="Renda variável (investido)", color="#1f77b4", alpha=0.75)
     ax.fill_between(datas, rv, 100, label="Tesouro Selic", color="#2ca02c", alpha=0.6)
     ax.set_ylim(0, 100)
@@ -484,7 +558,9 @@ def gerar_cartas(resultados: dict, limite: int | None = None) -> int:
     from utils import gemini_client
     existentes = {(c["mes"][:7], c["variante"]) for c in
                   db.selecionar("cartas", {"select": "mes,variante"}, order="mes")}
-    cliente = gemini_client.GeminiClient()
+    # cartas são saída narrativa (não entram em nenhum cálculo) -> modelo secundário,
+    # preservando a cota do modelo pinado para o sentimento (DECISOES.md item 49)
+    cliente = gemini_client.GeminiClient(modelo=config.GEMINI_MODEL_SECUNDARIO)
     geradas = 0
     for variante in VARIANTES:
         anterior = None
@@ -494,6 +570,7 @@ def gerar_cartas(resultados: dict, limite: int | None = None) -> int:
                 continue
             if limite and geradas >= limite:
                 return geradas
+            pct_rv_ef = carteira.get("pct_rv_efetivo", carteira["pct_rv"])
             top = [p for p in carteira["posicoes"] if p["peso"] > 0][:5]
             vetadas = [p["ticker"] for p in carteira["posicoes"]
                        if p["classificacao_final"] == "vetado"]
@@ -503,9 +580,13 @@ def gerar_cartas(resultados: dict, limite: int | None = None) -> int:
             resumo = {
                 "mes": carteira["mes"], "variante": variante,
                 "sentimento_mercado": carteira["s_mercado"],
-                "pct_bolsa": round(carteira.get("pct_rv_efetivo", carteira["pct_rv"]) * 100, 1),
-                "pct_tesouro_selic": round(100 - carteira.get("pct_rv_efetivo", carteira["pct_rv"]) * 100, 1),
-                "principais_posicoes": [{"ticker": p["ticker"], "peso_pct": round(p["peso"] * 100, 1),
+                "pct_bolsa": round(pct_rv_ef * 100, 1),
+                "pct_tesouro_selic": round(100 - pct_rv_ef * 100, 1),
+                # peso na MESMA base de pct_bolsa (fatia do patrimônio total). Antes o
+                # peso ia como fatia da RV e o LLM publicava posições maiores que as
+                # reais ao lado do pct_bolsa (DECISOES.md item 55).
+                "principais_posicoes": [{"ticker": p["ticker"],
+                                         "peso_pct_do_patrimonio": round(p["peso"] * pct_rv_ef * 100, 1),
                                          "sentimento": p["sentimento_noticias"],
                                          "n_noticias": p["n_noticias"]} for p in top],
                 "entraram_no_mes": entrantes, "vetadas": vetadas,
@@ -627,7 +708,8 @@ def main():
         resultados[variante] = rodar_backtest(dados, indicadores, variante)
         print(f"  {len(resultados[variante]['serie'])} meses executados")
 
-    teste_anti_look_ahead(dados, resultados["contraria"]["carteiras"])
+    teste_anti_look_ahead(dados, resultados["contraria"]["carteiras"], indicadores,
+                          dados["universo"], "contraria")
 
     bench = benchmarks(dados)
     print("\n=== MÉTRICAS ===")

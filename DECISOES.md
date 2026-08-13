@@ -434,6 +434,68 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     ganhou desempate determinístico por ticker. Caso relevante na prática: vários S = 0,0
     no mesmo mês. Não altera a regra — preenche uma lacuna dela.
 
+49. **Modelo secundário para veto e cartas — APROVADO pelo humano em 2026-08-13.**
+    Descoberta: a cota gratuita é `GenerateRequestsPerDayPerProjectPerModel` = 500/dia
+    **POR MODELO**, então um segundo modelo pinado dobra a capacidade na mesma chave.
+    Decisão híbrida: o **sentimento continua 100% no modelo pinado principal**
+    (`gemini-3.1-flash-lite`), porque é ele que gera o sinal S de todo o backtest e
+    misturar modelos criaria heterogeneidade no sinal. Veto e cartas passam a usar
+    `GEMINI_MODEL_SECUNDARIO` (`gemini-3.5-flash-lite`): o veto é binário e tem citação
+    **validada por código** (robusto a troca de modelo) e as cartas são narrativa que não
+    entra em cálculo nenhum. Cada linha grava o modelo que a produziu. O cliente recusa
+    aliases `-latest` também no secundário.
+
+50. **BUG GRAVE (auditoria): teto de 15% ignorado com 6 ou menos empresas.** O laço saía
+    por `if not livres: break` ANTES de aplicar `min(p, TETO)`. Materializado em dados
+    reais: out/2021 e jun/2022 tinham PETR4 com **peso 1,0 = 100% da renda variável**
+    (6,7× o teto). Pior: para N entre 4 e 6 o excedente era despejado na posição "livre",
+    **invertendo a ordenação** — a ação de sentimento MAIS POSITIVO (a que a estratégia
+    contrária menos quer) ficava com 55% e a de sentimento mais negativo com 15%.
+    Corrigido: o corte vem antes de qualquer saída do laço. Com N ≤ 6 o teto trava todas
+    e a soma fica < 1 de propósito — a sobra da RV vai para o Tesouro Selic (item 44).
+    **Meus próprios testes não pegaram porque eu havia codificado o comportamento errado
+    como se fosse a regra** ("com 1 elegível ela leva 100% da RV"). Teste corrigido e
+    ampliado para varrer N = 1..20 verificando teto e monotonia.
+
+51. **BUG GRAVE (auditoria): série do robô desalinhada dos benchmarks em 1 mês.** O ponto
+    gravado na data d_i já continha o retorno do período (d_i, d_i+1], enquanto os
+    benchmarks gravavam o valor correto em cada data — as duas curvas mediam janelas
+    diferentes e a comparação era inválida. Efeito medido: robô 100% Selic aparecia
+    1,22% ACIMA do próprio benchmark Selic, e o Sharpe dava 0,52 onde o correto é 0.
+    Corrigido: a série passa a começar em 1,00 na primeira data e cada ponto contém tudo
+    que aconteceu ATÉ aquela data — mesma convenção de `benchmarks()`. Teste de regressão:
+    robô 100% Selic tem de bater EXATAMENTE o benchmark Selic (com custo zerado).
+
+52. **Turnover agora considera o drift de preços.** Comparava o alvo do mês com o alvo do
+    mês anterior, ignorando que os pesos derivam com a variação dos preços — subestimava
+    o volume realmente negociado. Passa a comparar com a carteira efetivamente carregada.
+
+53. **Retorno ano a ano creditado ao ano errado.** O retorno do período que começa em
+    01/12/2021 e termina em 03/01/2022 é retorno de DEZEMBRO/2021, mas era lançado em
+    2022. Corrigido para creditar ao ano do início do período.
+
+54. **BUG CRÍTICO DE AUDITORIA: o teste anti-look-ahead era tautológico.** Suas duas
+    asserções eram verdadeiras por construção — o assert nunca poderia disparar. Ou seja,
+    a garantia "teste anti-look-ahead passando" que eu havia reportado **não provava nada**.
+    Corrigido em duas partes: (a) recontagem INDEPENDENTE das notícias do próprio mês,
+    comparada com o `n_noticias` usado em cada carteira; (b) **teste de MUTAÇÃO** — o
+    backtest injeta de propósito um look-ahead (desloca as notícias um mês) e EXIGE que a
+    checagem acuse. Resultado atual: 74 violações detectadas na mutação, provando que o
+    teste tem poder de detecção. Sem (b), qualquer teste desse tipo pode ser vazio.
+
+55. **Cartas misturavam bases percentuais.** O JSON enviado ao LLM trazia o peso como
+    fatia da RENDA VARIÁVEL ao lado de `pct_bolsa`, que é fatia do PATRIMÔNIO — a carta
+    publicava posições maiores que as reais. Agora o peso vai na mesma base
+    (`peso_pct_do_patrimonio`).
+
+56. **Teste de lote 25 vs 50 manchetes (aprovado pelo humano fazer o teste):** em 100
+    manchetes idênticas, a concordância de **sentimento foi 88%** e a de **entidade 64%**.
+    Abaixo do critério de 95% que eu havia definido para adotar 50. **Decisão: manter 25**,
+    conforme o plano original. Observação relevante para o relatório: a divergência de 12%
+    entre dois tamanhos de lote do MESMO modelo é uma medida honesta da instabilidade
+    intrínseca do classificador — vale citar como limitação e reforça a necessidade do
+    gabarito humano para medir acurácia.
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).

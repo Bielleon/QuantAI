@@ -365,7 +365,11 @@ def _somar_meses(d: date, meses: int) -> date:
 
 
 def etapa_veto(piloto: int | None = None):
-    cliente = gemini_client.GeminiClient()
+    # Modelo SECUNDÁRIO (aprovado em 2026-08-13, DECISOES.md item 49): o veto é binário e
+    # a citação é validada por código, então é robusto a troca de modelo; isso libera a
+    # cota inteira do modelo pinado para o sentimento, que gera o sinal S.
+    cliente = gemini_client.GeminiClient(modelo=config.GEMINI_MODEL_SECUNDARIO)
+    print(f"Modelo do veto: {config.GEMINI_MODEL_SECUNDARIO} (sentimento usa o pinado)")
     fila = db.selecionar("documentos_cvm",
                          {"status_processamento": "eq.extraido",
                           "select": "id,ticker,data_entrega,texto_extraido"},
@@ -393,7 +397,7 @@ def etapa_veto(piloto: int | None = None):
                     "mes_evento": mes_evento.isoformat(),
                     "veto_de": mes_evento.isoformat() if valida else None,
                     "veto_ate": _somar_meses(mes_evento, config.VETO_MESES).isoformat() if valida else None,
-                    "modelo": config.GEMINI_MODEL_PINNED,
+                    "modelo": config.GEMINI_MODEL_SECUNDARIO,
                     "model_version": resposta["model_version"],
                     "prompt_hash": PROMPT_VETO_HASH,
                 }
