@@ -117,35 +117,39 @@
 
   /* ============ PÁGINA 4 ============ */
   .p4-graf { text-align: center; }
-  .p4-graf img { width: 100%; max-height: 2.98in; object-fit: contain; }
-  .leitura .card { padding: .11in .14in; }
-  .p4-base { display: flex; gap: .16in; flex: 1; margin-top: .12in; min-height: 0; }
-  .tabela { flex: 1.25; }
+  .p4-graf img { width: 100%; max-height: 2.82in; object-fit: contain; }
+  .leitura .card { padding: .1in .14in; }
+  .p4-base { display: flex; gap: .16in; flex: 1; margin-top: .12in; margin-bottom: .05in; min-height: 0; }
+  .tabela { flex: 1.12; }
   table { width: 100%; border-collapse: collapse; font-size: 9.4pt; }
   th { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 8.4pt; letter-spacing: .09em; text-transform: uppercase; color: #8291ab; font-weight: 600; text-align: right; padding: .045in .06in; border-bottom: 1px solid rgba(157,187,231,.2); }
   th:first-child, td:first-child { text-align: left; }
   td { padding: .05in .06in; text-align: right; color: #b9c4d8; border-bottom: 1px solid rgba(157,187,231,.07); }
   tr.kron td { color: #f0b453; font-weight: 700; }
   tr.kron2 td { color: #9cc3f5; font-weight: 600; }
-  .p4-col2 { flex: 1; display: flex; flex-direction: column; gap: .1in; }
-  .p4-col2 img { width: 100%; }
-  .leitura { flex: 1.05; display: flex; flex-direction: column; gap: .1in; }
-  .leitura .card p { font-size: 9.3pt; color: #b9c4d8; line-height: 1.4; }
+  .p4-col2 { flex: 1.22; display: flex; flex-direction: column; gap: .1in; }
+  .p4-col2 .card { flex: 1; display: flex; flex-direction: column; }
+  .p4-col2 img { width: 100%; flex: 1; object-fit: contain; min-height: 0; }
+  .leitura { flex: 1; display: flex; flex-direction: column; gap: .1in; }
+  .leitura .card p { font-size: 9.3pt; color: #b9c4d8; line-height: 1.38; }
   .leitura .card h3 { font-size: 10.2pt; margin-bottom: .03in; }
 
   /* ============ PÁGINA 5 ============ */
   .p5-corpo { display: flex; gap: .2in; flex: 1; min-height: 0; }
-  .p5-ia { flex: 1.45; display: flex; flex-direction: column; gap: .11in; }
-  .uso { display: flex; gap: .13in; align-items: flex-start; padding: .1in .14in; }
-  .uso .n { font-family: "Bahnschrift", sans-serif; font-size: 14pt; font-weight: 700; color: #f0b453; line-height: 1.1; }
-  .uso h3 { font-size: 10.6pt; margin-bottom: .025in; }
-  .uso p { font-size: 9.1pt; color: #8291ab; line-height: 1.37; }
-  .p5-dir { flex: 1; display: flex; flex-direction: column; gap: .11in; }
-  .p5-dir .card p, .p5-dir .card li { font-size: 9.3pt; color: #b9c4d8; line-height: 1.42; }
+  .p5-ia { flex: 1.45; display: flex; flex-direction: column; gap: .12in; }
+  .p5-ia .card { flex: 1; display: flex; }
+  .uso { display: flex; gap: .15in; align-items: center; padding: .1in .16in; }
+  .uso .n { font-family: "Bahnschrift", sans-serif; font-size: 17pt; font-weight: 700; color: #f0b453; line-height: 1.1; }
+  .uso h3 { font-size: 11.8pt; margin-bottom: .035in; }
+  .uso p { font-size: 10.2pt; color: #98a5bd; line-height: 1.42; }
+  .p5-ia .card > div:last-child { align-self: center; }
+  .p5-dir { flex: 1; display: flex; flex-direction: column; gap: .12in; }
+  .p5-dir .card p, .p5-dir .card li { font-size: 10.2pt; color: #b9c4d8; line-height: 1.48; }
+  .p5-dir .card li + li { margin-top: .05in; }
   .p5-dir ul { padding-left: .18in; }
-  .p5-rodape { display: flex; align-items: center; gap: .16in; margin-top: .14in; }
-  .p5-rodape img { height: .72in; border-radius: 10px; }
-  .p5-rodape .muted { font-size: 8.6pt; }
+  .p5-rodape { display: flex; align-items: center; gap: .16in; margin-top: auto; }
+  .p5-rodape img { height: .78in; border-radius: 10px; }
+  .p5-rodape .muted { font-size: 9pt; }
 </style>
 </head>
 <body>
@@ -282,9 +286,9 @@
       <div class="card uso"><div class="n">2</div><div><h3>Extrair risco grave dos fatos relevantes</h3><p>Dos 5.102 documentos triados, 2.250 com indício de risco foram lidos pelo LLM, que só aponta risco citando o trecho exato do PDF, conferido por código. 1 veto real, zero alucinações aceitas.</p></div></div>
       <div class="card uso"><div class="n">3</div><div><h3>Auditar o próprio sistema</h3><p>Enxames de agentes revisaram código e dados em cada fase; só no motor do backtest confirmaram 14 defeitos reais, do teto de risco furado a um teste que aprovava qualquer coisa.</p></div></div>
       <div class="card uso"><div class="n">4</div><div><h3>Criar a identidade do robô</h3><p>Nome, conceito e mascote do KRON nasceram de iteração com IA generativa.</p></div></div>
-      <div class="card">
+      <div class="card" style="display:block">
         <div class="rotulo">Limitações medidas da IA</div>
-        <p class="sec" style="font-size:9.1pt; line-height:1.38">O modelo diverge de si mesmo: 12% das manchetes mudam de classe entre lotes de 25 e 50, e a identificação da empresa concorda em só 64%. Mitigação: lote fixo, prompts com hash, validação por código e amostra separada para rotulagem humana. Cotas diárias limitaram o ritmo; filas idempotentes retomam sozinhas.</p>
+        <p class="sec" style="font-size:10.2pt; line-height:1.44">O modelo diverge de si mesmo: 12% das manchetes mudam de classe entre lotes de 25 e 50, e a identificação da empresa concorda em só 64%. Mitigação: lote fixo, prompts com hash, validação por código e amostra separada para rotulagem humana. Cotas diárias limitaram o ritmo; filas idempotentes retomam sozinhas.</p>
       </div>
     </div>
     <div class="p5-dir">

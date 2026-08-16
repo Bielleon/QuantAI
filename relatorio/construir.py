@@ -72,7 +72,7 @@ def montar_tokens() -> dict:
         f'{pct(se["cagr"], 1)} a.a., a estratégia {rel2} a renda fixa pura no período. As duas variantes '
         f'aparecem na tabela: a contrária é a tese e a invertida é o contrateste.</p></div>')
 
-    estilo_p = 'class="sec" style="font-size:9.4pt; line-height:1.42"'
+    estilo_p = 'class="sec" style="font-size:10.2pt; line-height:1.48"'
     if kc["sharpe"] > 0 and kc["retorno_total"] > se["retorno_total"]:
         resumo_conc = (f'Um sinal de linguagem convertido em regra fixa rendeu '
                        f'{pct(kc["retorno_total"])} em 66 meses, com Sharpe {num(kc["sharpe"])}, '

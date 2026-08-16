@@ -101,7 +101,8 @@ def grafico_patrimonio(dados):
 
 def grafico_alocacao(dados):
     aloc = dados["hermes"]["contraria"]["alocacao"]
-    fig, ax = plt.subplots(figsize=(4.7, 2.15), dpi=220)
+    fig, ax = plt.subplots(figsize=(5.3, 2.5), dpi=220)
+    plt.rcParams["font.size"] = 9.5
     xs = _datas_para_x([p["data"] for p in aloc])
     rv = [p["pct_rv_efetivo"] * 100 for p in aloc]
     ax.fill_between(xs, 0, rv, color=COR["kron"], alpha=0.88, linewidth=0)
@@ -110,14 +111,15 @@ def grafico_alocacao(dados):
     media_rv = sum(rv) / max(1, len(rv))
     cor_rotulo_bolsa = "#0e1626" if media_rv >= 25 else COR["kron"]
     y_rotulo_bolsa = min(max(8.0, media_rv * 0.45), 30.0)
-    ax.text(xs[len(xs) // 3], y_rotulo_bolsa, "BOLSA (efetivo)", fontsize=8.5,
+    ax.text(xs[len(xs) // 3], y_rotulo_bolsa, "BOLSA (efetivo)", fontsize=10.5,
             fontweight="bold", color=cor_rotulo_bolsa)
-    ax.text(xs[len(xs) // 3], 82, "TESOURO SELIC", fontsize=8.5, fontweight="bold", color="#cfe0f5")
+    ax.text(xs[len(xs) // 3], 80, "TESOURO SELIC", fontsize=10.5, fontweight="bold", color="#cfe0f5")
     ax.set_ylim(0, 100)
     ax.set_yticks([0, 40, 60, 80, 100])
-    ax.set_ylabel("% carteira", fontsize=7.5)
+    ax.set_ylabel("% carteira", fontsize=9)
     ax.set_xticks(range(2021, 2027))
-    ax.set_xticklabels([str(a) for a in range(2021, 2027)], fontsize=7)
+    ax.set_xticklabels([str(a) for a in range(2021, 2027)], fontsize=8.5)
+    ax.tick_params(axis="y", labelsize=8.5)
     _eixo_limpo(ax)
     ax.margins(x=0)
     fig.tight_layout(pad=0.3)
