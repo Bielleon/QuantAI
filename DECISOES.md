@@ -496,6 +496,41 @@ regras de negócio (seção 8 do plano) exigem aprovação explícita registrada
     intrínseca do classificador — vale citar como limitação e reforça a necessidade do
     gabarito humano para medir acurácia.
 
+---
+
+## 2026-08-16 — Relatório final (AAFQ.pdf)
+
+57. **Classificação de sentimento CONCLUÍDA: 35.472 de 35.472 manchetes (100%).**
+    Paralelização em 3 shards disjuntos (id % 3), cada um com chave própria das 3 novas
+    fornecidas pela equipe. Distribuição final: 38,2% positivas, 19,5% negativas, 42,3%
+    neutras; 60,4% mapeadas para empresas do universo. Achado relevante: o S do mercado
+    foi positivo em 65 dos 66 meses (neutro em mar/2024) — o noticiário financeiro é
+    estruturalmente otimista, e o sinal do KRON operou nos degraus de intensidade do
+    otimismo (%Bolsa teórico entre 51,6% e 60,0%, sem tocar os clamps de 40/80).
+
+58. **Resultados finais do backtest (100% do corpus):** KRON contrária 122,2% (15,9%
+    a.a., Sharpe 0,40, maxDD −9,7%, turnover 17,8%/mês); invertida 105,5% (Sharpe 0,25);
+    Ibovespa 46,3%; Selic 79,5%; 60/40 62,0%. A contrária vence os 3 benchmarks e o
+    contrateste. Teste anti-look-ahead passou; mutação detectada com 1.198 violações.
+
+59. **Robô renomeado: Hermes → KRON** (Kernel de Rastreamento de Otimismo e Notícias),
+    nome e identidade definidos pela equipe. As 2 cartas antigas do "Hermes" no banco
+    ficam obsoletas (cartas não integram o relatório final).
+
+60. **Relatório final gerado (relatorio/AAFQ.pdf):** 5 páginas 16:9, anônimo, identidade
+    visual do KRON (paleta sol/lua, anel-relógio, Bahnschrift), texto varrido pelas
+    regras anti-IA da equipe. Pipeline reproduzível: 08_backtest → gerar_graficos →
+    construir (números injetados de metricas.json; nada digitado à mão).
+    **Auditoria final multi-agente: 17 achados confirmados, todos corrigidos** — número
+    desatualizado do teste de mutação (74→1.198), "todos os 66 meses" corrigido para
+    "65 dos 66" (mar/2024 foi neutro, o próprio gráfico mostrava), "39 verificações"
+    corrigido para 58 (suíte atual; DECISOES item 47 registrava 35 de antes da
+    ampliação), escopo dos 14 defeitos restrito ao motor, ponte 5.102 triados → 2.250
+    lidos pelo LLM, vol. da Selic exibida (1,0%), divergência de entidade (64%)
+    declarada junto com a de sentimento (12%), "decisão cautelar" do TCE-PR explicitada,
+    ortografia AO90 (contraindicador/contrateste). Nenhuma violação eliminatória
+    (formato, anonimato e idioma conferidos contra o edital).
+
 ## Pendências abertas
 - [x] DDL no Supabase — resolvido em 2026-07-19 via MCP (item 14).
 - [x] Data-base das métricas do CSV — respondido pelo humano em 2026-07-19 (item 17).

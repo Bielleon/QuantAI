@@ -45,7 +45,7 @@ def montar_tokens() -> dict:
     sys.path.insert(0, str(RAIZ))
     from utils import db
     n_class = db.contar("sentimentos")
-    n_coletadas = db.contar("noticias", {"titulo": "not.is.null"})
+    n_coletadas = db.contar("noticias")  # coletadas de fato (120 sem título ficam fora da classificação)
     n_mil = f"{n_class / 1000:.1f}".replace(".", ",") + " mil"
     n_ponto = f"{n_class:,}".replace(",", ".")
     n_coletadas_fmt = f"{n_coletadas:,}".replace(",", ".")
@@ -70,7 +70,7 @@ def montar_tokens() -> dict:
         f'contra {pct(ib["max_drawdown"])}.</p>'
         f'<p style="margin-top:.05in"><b class="ouro">Contra a Selic:</b> com juros médios de '
         f'{pct(se["cagr"], 1)} a.a., a estratégia {rel2} a renda fixa pura no período. As duas variantes '
-        f'aparecem na tabela: a contrária é a tese e a invertida é o contra-teste.</p></div>')
+        f'aparecem na tabela: a contrária é a tese e a invertida é o contrateste.</p></div>')
 
     estilo_p = 'class="sec" style="font-size:9.4pt; line-height:1.42"'
     if kc["sharpe"] > 0 and kc["retorno_total"] > se["retorno_total"]:
@@ -92,7 +92,26 @@ def montar_tokens() -> dict:
         f'cobertura de mídia, que cresce no tempo; o classificador tem ruído medido de 12%; o universo '
         f'carrega viés de sobrevivência.</p>')
 
+    # legenda do gráfico de sentimento reflete o que os dados REALMENTE mostraram
+    series = json.loads((RAIZ / "outputs" / "series_backtest.json").read_text(encoding="utf-8"))
+    s_vals = [p["s"] for p in series["s_mercado"]]
+    rv_teor = [p["pct_rv"] * 100 for p in series["hermes"]["contraria"]["alocacao"]]
+    if s_vals and min(s_vals) >= 0:
+        n_pos = sum(1 for v in s_vals if v > 0)
+        n_neutros = sum(1 for v in s_vals if v == 0)
+        qualif = (f"otimista em {n_pos} dos {len(s_vals)} meses e neutro nos demais"
+                  if n_neutros else f"otimista em todos os {len(s_vals)} meses")
+        vmin = f"{min(rv_teor):.1f}".replace(".", ",")
+        vmax = f"{max(rv_teor):.1f}".replace(".", ",")
+        legenda_sent = (f"O noticiário fechou {qualif}; o sinal variou na dose. "
+                        f"A regra converteu isso em alvo de bolsa entre {vmin}% e {vmax}%, "
+                        f"longe dos limites de 40 e 80%.")
+    else:
+        legenda_sent = ("Meses de lua (pessimismo) elevam a bolsa até 80%; "
+                        "meses de sol (otimismo) reduzem até 40%.")
+
     return {
+        "LEGENDA_SENTIMENTO": legenda_sent,
         "IMG_KRON": b64(ASSETS / "kron.jpg"),
         "IMG_PATRIMONIO": b64(ASSETS / "grafico_patrimonio.png"),
         "IMG_ALOCACAO": b64(ASSETS / "grafico_alocacao.png"),
@@ -110,6 +129,7 @@ def montar_tokens() -> dict:
         "RET_IBOV": pct(ib["retorno_total"]), "CAGR_IBOV": pct(ib["cagr"], 1),
         "VOL_IBOV": pct(ib["vol_anual"], 1), "SHP_IBOV": num(ib["sharpe"]), "DD_IBOV": pct(ib["max_drawdown"], 1),
         "RET_SELIC": pct(se["retorno_total"]), "CAGR_SELIC": pct(se["cagr"], 1),
+        "VOL_SELIC": pct(se["vol_anual"], 1),
         "RET_6040": pct(mi["retorno_total"]), "CAGR_6040": pct(mi["cagr"], 1),
         "VOL_6040": pct(mi["vol_anual"], 1), "SHP_6040": num(mi["sharpe"]), "DD_6040": pct(mi["max_drawdown"], 1),
     }

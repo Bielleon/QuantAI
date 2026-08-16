@@ -131,13 +131,26 @@ def grafico_sentimento(dados):
     fig, ax = plt.subplots(figsize=(5.5, 1.72), dpi=220)
     xs = _datas_para_x([p["mes"] + "-15" for p in s])
     valores = [p["s"] for p in s]
-    cores = [COR["kron"] if v >= 0 else "#7fb3e8" for v in valores]
+    # sol = acima da mediana do otimismo (menos bolsa); lua = abaixo (mais bolsa).
+    # No período real o S foi positivo em todos os meses, então a dualidade é
+    # RELATIVA à mediana; com S negativo os dois códigos coincidem com o sinal.
+    mediana = sorted(valores)[len(valores) // 2]
+    corte = mediana if min(valores) >= 0 else 0.0
+    cores = [COR["kron"] if v >= corte else "#7fb3e8" for v in valores]
     ax.bar(xs, valores, width=0.055, color=cores, linewidth=0)
     ax.axhline(0, color=COR["baseline"], linewidth=0.9)
-    amplitude = max(0.25, max(abs(v) for v in valores) * 1.35)
-    ax.set_ylim(-amplitude, amplitude)
-    ax.text(xs[0], amplitude * 0.78, "otimismo (sol): menos bolsa", fontsize=7.6, color=COR["kron"])
-    ax.text(xs[0], -amplitude * 0.9, "pessimismo (lua): mais bolsa", fontsize=7.6, color="#7fb3e8")
+    if min(valores) >= 0:
+        ax.axhline(corte, color="#8291ab", linewidth=0.7, linestyle=(0, (3, 3)))
+        ax.set_ylim(min(0, min(valores)) - 0.02, max(valores) * 1.42)
+        ax.text(0.01, 0.965, "sol: otimismo acima da mediana, menos bolsa",
+                transform=ax.transAxes, va="top", fontsize=7.6, color=COR["kron"])
+        ax.text(0.01, 0.855, "lua: abaixo da mediana, mais bolsa",
+                transform=ax.transAxes, va="top", fontsize=7.6, color="#7fb3e8")
+    else:
+        amplitude = max(0.25, max(abs(v) for v in valores) * 1.35)
+        ax.set_ylim(-amplitude, amplitude)
+        ax.text(xs[0], amplitude * 0.78, "otimismo (sol): menos bolsa", fontsize=7.6, color=COR["kron"])
+        ax.text(xs[0], -amplitude * 0.9, "pessimismo (lua): mais bolsa", fontsize=7.6, color="#7fb3e8")
     ax.set_xticks(range(2021, 2027))
     ax.set_xticklabels([str(a) for a in range(2021, 2027)], fontsize=7)
     ax.tick_params(axis="y", labelsize=7)

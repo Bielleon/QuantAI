@@ -170,7 +170,7 @@
   </div>
   <div class="stats">
     <div class="card"><div class="v num">{{N_MANCHETES_MIL}}</div><div class="k">manchetes lidas por IA</div></div>
-    <div class="card"><div class="v num">5.102</div><div class="k">documentos CVM auditados</div></div>
+    <div class="card"><div class="v num">5.102</div><div class="k">documentos CVM triados</div></div>
     <div class="card"><div class="v num">20 + Selic</div><div class="k">ações de qualidade + renda fixa</div></div>
     <div class="card"><div class="v num">66 meses</div><div class="k">jan/2021 a jun/2026, com custos</div></div>
     <div class="card"><div class="v num">R$ 0</div><div class="k">custo de dados e de IA</div></div>
@@ -183,7 +183,7 @@
   <div class="p2-linha1">
     <div class="card hipotese">
       <div class="rotulo">Hipótese e ineficiência explorada</div>
-      <p>Quando as manchetes de um mês ficam uniformemente pessimistas, o medo tende a já estar nos preços; na euforia, o inverso. O KRON trata o sentimento agregado da mídia como contra-indicador (De Bondt &amp; Thaler, 1985): mais bolsa nos meses de pessimismo, menos nos de otimismo, sempre pela mesma regra.</p>
+      <p>Quando as manchetes de um mês ficam uniformemente pessimistas, o medo tende a já estar nos preços; na euforia, o inverso. O KRON trata o sentimento agregado da mídia como contraindicador (De Bondt &amp; Thaler, 1985): mais bolsa nos meses de pessimismo, menos nos de otimismo, sempre pela mesma regra.</p>
     </div>
     <div class="formulas">
       <div class="card formula">S = (n⁺ − n⁻) / n<small>sentimento do mês, por empresa e do mercado · S ∈ [−1, +1]</small></div>
@@ -210,7 +210,7 @@
     <div class="card p2-graf">
       <div class="rotulo">O sinal: sentimento do mercado (S), mês a mês</div>
       <img src="{{IMG_SENTIMENTO}}" alt="Sentimento do mercado por mês">
-      <div class="legenda-graf">Meses de lua (pessimismo) elevam a bolsa até 80%; meses de sol (otimismo) reduzem até 40%.</div>
+      <div class="legenda-graf">{{LEGENDA_SENTIMENTO}}</div>
     </div>
   </div>
 </section>
@@ -228,8 +228,8 @@
     <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(270deg)"></i></div><h3>Mês M+1</h3><p>Carteira rende; a parcela fora da bolsa acumula a Selic diária oficial</p></div>
   </div>
   <div class="rigor">
-    <div class="card"><h3>Teste de vazamento com mutação</h3><p>Plantamos um vazamento do futuro e o teste anti-look-ahead precisa acusá-lo: <span class="destaque">74 violações detectadas</span> na prova.</p></div>
-    <div class="card"><h3>39 verificações do motor</h3><p>Dados sintéticos de resposta conhecida conferem fórmula do S, teto de 15%, veto vencendo sentimento, drawdown exato e Selic sem dupla contagem.</p></div>
+    <div class="card"><h3>Teste de vazamento com mutação</h3><p>Plantamos um vazamento do futuro e o teste anti-look-ahead precisa acusá-lo: <span class="destaque">1.198 violações detectadas</span> na prova.</p></div>
+    <div class="card"><h3>58 verificações do motor</h3><p>Dados sintéticos de resposta conhecida conferem fórmula do S, teto de 15%, veto vencendo sentimento, drawdown exato e Selic sem dupla contagem.</p></div>
     <div class="card"><h3>Uma única série Selic</h3><p>A mesma taxa oficial do BCB remunera a renda fixa, compõe o 60/40 e serve de piso ao Sharpe.</p></div>
     <div class="card"><h3>IA auditando IA</h3><p>Agentes revisores independentes atacaram código e dados: <span class="destaque">14 defeitos reais corrigidos</span> antes dos resultados, entre eles um teto de risco furado e um teste vazio.</p></div>
     <div class="card"><h3>Alucinação barrada por código</h3><p>Veto só existe se a citação do LLM for <b>cópia literal</b> do PDF oficial. Em 2.250 documentos, <span class="destaque">zero alucinações aceitas</span>.</p></div>
@@ -237,7 +237,7 @@
   </div>
   <div class="card universo">
     <div class="rotulo">Universo e benchmarks</div>
-    <p>20 ações líquidas da B3 aprovadas em filtro de qualidade fundamentalista (ex.: PETR4, ITUB4, WEGE3, SBSP3) + Tesouro Selic &nbsp;·&nbsp; Benchmarks: <b>Ibovespa</b>, <b>Selic</b> e <b>60/40</b> &nbsp;·&nbsp; Duas variantes reportadas: contrária (a tese) e invertida (momentum, o contra-teste)</p>
+    <p>20 ações líquidas da B3 aprovadas em filtro de qualidade fundamentalista (ex.: PETR4, ITUB4, WEGE3, SBSP3) + Tesouro Selic &nbsp;·&nbsp; Benchmarks: <b>Ibovespa</b>, <b>Selic</b> e <b>60/40</b> &nbsp;·&nbsp; Duas variantes reportadas: contrária (a tese) e invertida (momentum, o contrateste)</p>
   </div>
 </section>
 
@@ -256,7 +256,7 @@
         <tr class="kron"><td>KRON contrária</td><td class="num">{{RET_C}}</td><td class="num">{{CAGR_C}}</td><td class="num">{{VOL_C}}</td><td class="num">{{SHP_C}}</td><td class="num">{{DD_C}}</td></tr>
         <tr class="kron2"><td>KRON invertida</td><td class="num">{{RET_I}}</td><td class="num">{{CAGR_I}}</td><td class="num">{{VOL_I}}</td><td class="num">{{SHP_I}}</td><td class="num">{{DD_I}}</td></tr>
         <tr><td>Ibovespa</td><td class="num">{{RET_IBOV}}</td><td class="num">{{CAGR_IBOV}}</td><td class="num">{{VOL_IBOV}}</td><td class="num">{{SHP_IBOV}}</td><td class="num">{{DD_IBOV}}</td></tr>
-        <tr><td>Tesouro Selic</td><td class="num">{{RET_SELIC}}</td><td class="num">{{CAGR_SELIC}}</td><td class="num">—</td><td class="num">0,00</td><td class="num">0%</td></tr>
+        <tr><td>Tesouro Selic</td><td class="num">{{RET_SELIC}}</td><td class="num">{{CAGR_SELIC}}</td><td class="num">{{VOL_SELIC}}</td><td class="num">0,00</td><td class="num">0%</td></tr>
         <tr><td>60/40</td><td class="num">{{RET_6040}}</td><td class="num">{{CAGR_6040}}</td><td class="num">{{VOL_6040}}</td><td class="num">{{SHP_6040}}</td><td class="num">{{DD_6040}}</td></tr>
       </table>
     </div>
@@ -268,7 +268,7 @@
     </div>
     <div class="leitura">
       {{LEITURA_CRITICA}}
-      <div class="card"><h3>O freio da CVM em ação</h3><p>Out/2021: o TCE-PR decretou <i>inidoneidade</i> de concessionárias da CCR. O KRON vetou a ação por 6 meses, com a citação do documento validada por código.</p></div>
+      <div class="card"><h3>O freio da CVM em ação</h3><p>Out/2021: decisão cautelar do TCE-PR declarou <i>inidôneas</i> concessionárias da CCR. O KRON vetou a ação por 6 meses, com a citação do documento validada por código.</p></div>
     </div>
   </div>
 </section>
@@ -279,12 +279,12 @@
   <div class="p5-corpo">
     <div class="p5-ia">
       <div class="card uso"><div class="n">1</div><div><h3>Ler o noticiário em escala</h3><p>{{N_MANCHETES_PONTO}} manchetes classificadas (sentimento e empresa) com prompt congelado, temperatura 0 e modelo fixado. Replicável e dentro da cota gratuita.</p></div></div>
-      <div class="card uso"><div class="n">2</div><div><h3>Extrair risco grave dos fatos relevantes</h3><p>2.250 documentos CVM analisados; o LLM só aponta risco citando o trecho exato do PDF, conferido por código. 1 veto real, zero alucinações aceitas.</p></div></div>
-      <div class="card uso"><div class="n">3</div><div><h3>Auditar o próprio sistema</h3><p>Enxames de agentes revisaram código, dados e vieses em cada fase: 14 defeitos reais corrigidos, do teto de risco furado a um teste que aprovava qualquer coisa.</p></div></div>
+      <div class="card uso"><div class="n">2</div><div><h3>Extrair risco grave dos fatos relevantes</h3><p>Dos 5.102 documentos triados, 2.250 com indício de risco foram lidos pelo LLM, que só aponta risco citando o trecho exato do PDF, conferido por código. 1 veto real, zero alucinações aceitas.</p></div></div>
+      <div class="card uso"><div class="n">3</div><div><h3>Auditar o próprio sistema</h3><p>Enxames de agentes revisaram código e dados em cada fase; só no motor do backtest confirmaram 14 defeitos reais, do teto de risco furado a um teste que aprovava qualquer coisa.</p></div></div>
       <div class="card uso"><div class="n">4</div><div><h3>Criar a identidade do robô</h3><p>Nome, conceito e mascote do KRON nasceram de iteração com IA generativa.</p></div></div>
       <div class="card">
         <div class="rotulo">Limitações medidas da IA</div>
-        <p class="sec" style="font-size:9.1pt; line-height:1.38">O modelo diverge de si mesmo: 12% das manchetes mudam de classe entre lotes de 25 e 50. Mitigação: lote fixo, prompts com hash, validação por código e amostra separada para rotulagem humana. Cotas diárias limitaram o ritmo; filas idempotentes retomam sozinhas.</p>
+        <p class="sec" style="font-size:9.1pt; line-height:1.38">O modelo diverge de si mesmo: 12% das manchetes mudam de classe entre lotes de 25 e 50, e a identificação da empresa concorda em só 64%. Mitigação: lote fixo, prompts com hash, validação por código e amostra separada para rotulagem humana. Cotas diárias limitaram o ritmo; filas idempotentes retomam sozinhas.</p>
       </div>
     </div>
     <div class="p5-dir">

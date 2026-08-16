@@ -2,14 +2,14 @@
 
 Período do backtest: **2021-01 a 2026-06** (decisão mensal, execução no 1º pregão do mês seguinte).
 
-Corpus de mídia: **35472 notícias** com título; **5300 classificadas** (15%).
+Corpus de mídia: **35472 notícias** com título; **35472 classificadas** (100%).
 
 ## Resultados vs. benchmarks
 
 | estratégia | retorno total | CAGR | vol. anual | Sharpe | max. drawdown | turnover médio |
 |---|---|---|---|---|---|---|
-| **Hermes (contrária)** | 105.9% | 14.3% | 2.9% | 0.98 | -0.5% | 2.8% |
-| **Hermes (invertida)** | 104.9% | 14.2% | 2.7% | 1.01 | -0.5% | 2.8% |
+| **Hermes (contrária)** | 122.2% | 15.9% | 11.9% | 0.40 | -9.7% | 17.8% |
+| **Hermes (invertida)** | 105.5% | 14.2% | 13.4% | 0.25 | -11.6% | 22.8% |
 | Ibovespa | 46.3% | 7.3% | 18.0% | -0.12 | -22.9% | 0.0% |
 | Tesouro Selic | 79.5% | 11.4% | 1.0% | 0.00 | 0.0% | 0.0% |
 | 60/40 (Ibov/Selic) | 62.0% | 9.3% | 10.9% | -0.12 | -12.4% | 0.0% |
@@ -18,12 +18,12 @@ Corpus de mídia: **35472 notícias** com título; **5300 classificadas** (15%).
 
 | ano | contrária | invertida | Ibovespa | Selic |
 |---|---|---|---|---|
-| 2021 | 6.6% | 6.7% | -11.5% | 4.3% |
-| 2022 | 14.2% | 14.2% | 2.4% | 12.4% |
-| 2023 | 22.7% | 21.8% | 24.7% | 13.0% |
-| 2024 | 13.0% | 13.0% | -9.5% | 10.9% |
-| 2025 | 14.3% | 14.3% | 33.6% | 14.3% |
-| 2026 | 6.8% | 6.8% | 7.0% | 6.8% |
+| 2021 | 0.2% | -2.0% | -11.5% | 4.3% |
+| 2022 | 15.4% | 16.3% | 2.4% | 12.4% |
+| 2023 | 32.5% | 32.4% | 24.7% | 13.0% |
+| 2024 | 4.2% | -0.3% | -9.5% | 10.9% |
+| 2025 | 28.8% | 32.4% | 33.6% | 14.3% |
+| 2026 | 8.1% | 3.1% | 7.0% | 6.8% |
 
 ## Vetos aplicados (1)
 
