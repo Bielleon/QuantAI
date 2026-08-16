@@ -66,10 +66,13 @@ def _datas_para_x(datas):
 
 def grafico_patrimonio(dados):
     fig, ax = plt.subplots(figsize=(11.0, 2.95), dpi=200)
+    # Ibovespa mais claro e mais grosso: a versão anterior (cinza 1,4px) sumia no
+    # fundo escuro e o vale de 84 em jul/2022 passava despercebido, parecendo
+    # inconsistente com o drawdown de -22,9% da tabela (a série sempre foi a mesma)
     series = [
         ("KRON (contrária)", dados["hermes"]["contraria"]["serie"], COR["kron"], "-", 2.6),
         ("KRON (invertida)", dados["hermes"]["invertida"]["serie"], COR["kron_inv"], "-", 1.8),
-        ("Ibovespa", dados["benchmarks"]["ibovespa"], COR["ibov"], (0, (4, 2)), 1.4),
+        ("Ibovespa", dados["benchmarks"]["ibovespa"], "#aeb7c6", (0, (4, 2)), 1.75),
         ("Tesouro Selic", dados["benchmarks"]["selic"], COR["selic"], (0, (4, 2)), 1.4),
         ("60/40", dados["benchmarks"]["60_40"], COR["misto"], (0, (1, 1.6)), 1.4),
     ]
@@ -85,6 +88,8 @@ def grafico_patrimonio(dados):
         ax.annotate(f'{nome}  {y - 100:+.0f}%', (x, y), xytext=(4, dy),
                     textcoords="offset points", fontsize=8.3, color=cor, fontweight="bold")
     ax.axhline(100, color=COR["baseline"], linewidth=0.8)
+    piso = min(p["patrimonio"] * 100 for p in dados["benchmarks"]["ibovespa"])
+    ax.set_ylim(bottom=piso - 6)  # garante o vale do Ibovespa (84) visível com folga
     ax.set_ylabel("Patrimônio (base 100)", fontsize=8)
     ax.legend([s[0] for s in series], loc="upper left", frameon=False, fontsize=7.6,
               labelcolor=COR["ink2"], ncols=2, columnspacing=1.2, handlelength=1.6)
@@ -122,6 +127,9 @@ def grafico_alocacao(dados):
     ax.tick_params(axis="y", labelsize=8.5)
     _eixo_limpo(ax)
     ax.margins(x=0)
+    # mesmo eixo temporal do gráfico de patrimônio (a série começa em fev/2021;
+    # sem isso o tick de 2021 caía fora e o gráfico parecia começar em 2022)
+    ax.set_xlim(left=2021)
     fig.tight_layout(pad=0.3)
     fig.savefig(ASSETS / "grafico_alocacao.png", transparent=True)
     plt.close(fig)

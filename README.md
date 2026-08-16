@@ -3,7 +3,7 @@
 Estratégia quantitativa que combina **sentimento de notícias** (classificado por LLM),
 **veto fundamentalista** (documentos oficiais da CVM) e **backtest próprio** — jan/2021 a
 jun/2026, decisão mensal, em duas variantes: aposta contrária e momentum.
-O robô gestor se chama **Hermes**.
+O robô gestor se chama **KRON** (Kernel de Rastreamento de Otimismo e Notícias).
 
 ## Filosofia da fusão de sinais
 
@@ -53,7 +53,7 @@ scripts/00..08         pipeline por fase + run_all.py
   08_backtest             indicadores, backtest, gráficos, cartas, resumo
   supervisor_*            relançam as etapas de LLM após cota/instabilidade
   relatorio_cobertura     notícias por empresa × mês
-tests/test_backtest.py 35 verificações do motor com dados sintéticos
+tests/test_backtest.py 58 verificações do motor com dados sintéticos
 outputs/               gráficos PNG, métricas, auditoria, gabarito
 DECISOES.md            registro de TODAS as decisões técnicas (fonte da verdade)
 RESUMO_EXECUTIVO.md    números finais, vetos e limitações declaradas

@@ -53,6 +53,11 @@ def montar_tokens() -> dict:
     dif_ibov = (kc["retorno_total"] - ib["retorno_total"]) * 100
     dif_selic = (kc["retorno_total"] - se["retorno_total"]) * 100
 
+    # séries usadas pela legenda do sentimento E pelo ponto fraco da conclusão
+    series = json.loads((RAIZ / "outputs" / "series_backtest.json").read_text(encoding="utf-8"))
+    s_vals = [p["s"] for p in series["s_mercado"]]
+    rv_teor = [p["pct_rv"] * 100 for p in series["hermes"]["contraria"]["alocacao"]]
+
     if kc["sharpe"] > max(ib["sharpe"], mi["sharpe"], 0):
         titulo = f'Sharpe de {num(kc["sharpe"])}, acima dos três benchmarks'
     elif kc["retorno_total"] > ib["retorno_total"]:
@@ -90,12 +95,12 @@ def montar_tokens() -> dict:
         f'fixa, freio CVM validado por código e replicabilidade (modelo fixado, prompts com hash).</p>'
         f'<p {estilo_p} style="margin-top:.05in"><b style="color:#e9eef8">Pontos fracos:</b> o sinal depende da '
         f'cobertura de mídia, que cresce no tempo; o classificador tem ruído medido de 12%; o universo '
-        f'carrega viés de sobrevivência.</p>')
+        f'carrega viés de sobrevivência. O período não teve nenhum mês de pessimismo líquido: o alvo de '
+        f'bolsa ficou entre {f"{min(rv_teor):.1f}".replace(".", ",")}% e '
+        f'{f"{max(rv_teor):.1f}".replace(".", ",")}%, e o lado da tese que compra o pânico '
+        f'(rumo aos 80%) segue não testado na prática.</p>')
 
     # legenda do gráfico de sentimento reflete o que os dados REALMENTE mostraram
-    series = json.loads((RAIZ / "outputs" / "series_backtest.json").read_text(encoding="utf-8"))
-    s_vals = [p["s"] for p in series["s_mercado"]]
-    rv_teor = [p["pct_rv"] * 100 for p in series["hermes"]["contraria"]["alocacao"]]
     if s_vals and min(s_vals) >= 0:
         n_pos = sum(1 for v in s_vals if v > 0)
         n_neutros = sum(1 for v in s_vals if v == 0)
@@ -113,6 +118,7 @@ def montar_tokens() -> dict:
     return {
         "LEGENDA_SENTIMENTO": legenda_sent,
         "IMG_KRON": b64(ASSETS / "kron.jpg"),
+        "IMG_KRON_CAPA": b64(ASSETS / "kron_capa.png"),
         "IMG_WORDMARK": b64(ASSETS / "kron_wordmark.png"),
         "IMG_PATRIMONIO": b64(ASSETS / "grafico_patrimonio.png"),
         "IMG_ALOCACAO": b64(ASSETS / "grafico_alocacao.png"),

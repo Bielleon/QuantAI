@@ -13,7 +13,7 @@ Pipeline:
        peso ∝ (N+1−rank), teto de 15%/ação, renormalização após teto e vetos
        custo de 0,1% sobre o turnover; perna RF acumula Selic diária
   3. benchmarks: Ibovespa, Selic pura e 60/40 rebalanceado mensalmente
-  4. métricas, gráficos, JSON mensal em carteiras.posicoes, cartas do Hermes
+  4. métricas, gráficos, JSON mensal em carteiras.posicoes, cartas do KRON
   5. teste automatizado anti-look-ahead (assert)
 
 Uso: 08_backtest.py [--sem-cartas]
@@ -489,12 +489,12 @@ def gerar_graficos(resultados: dict, bench: dict) -> None:
     for variante, cor in [("contraria", "#1f77b4"), ("invertida", "#ff7f0e")]:
         s = resultados[variante]["serie"]
         ax.plot([p["data"] for p in s], [p["patrimonio"] for p in s],
-                label=f"Hermes ({variante})", color=cor, linewidth=2)
+                label=f"KRON ({variante})", color=cor, linewidth=2)
     for nome, cor in [("ibovespa", "#7f7f7f"), ("selic", "#2ca02c"), ("60_40", "#9467bd")]:
         b = bench[nome]
         ax.plot([p["data"] for p in b], [p["patrimonio"] for p in b],
                 label=nome.replace("_", "/").title(), color=cor, linestyle="--", linewidth=1.3)
-    ax.set_title("Patrimônio acumulado — Hermes vs benchmarks")
+    ax.set_title("Patrimônio acumulado — KRON vs benchmarks")
     ax.set_ylabel("Patrimônio (base 1,00)")
     ax.legend()
     ax.grid(alpha=0.3)
@@ -554,7 +554,7 @@ JSON: {JSON_DO_MES}"""
 
 
 def gerar_cartas(resultados: dict, limite: int | None = None) -> int:
-    """Cartas mensais do Hermes (prompt congelado 9.3). Idempotente: só gera as que faltam."""
+    """Cartas mensais do KRON (prompt congelado 9.3). Idempotente: só gera as que faltam."""
     from utils import gemini_client
     existentes = {(c["mes"][:7], c["variante"]) for c in
                   db.selecionar("cartas", {"select": "mes,variante"}, order="mes")}
@@ -626,7 +626,7 @@ def exportar_auditoria(resultados: dict, indicadores: dict) -> None:
 
 def escrever_resumo(tabela: dict, resultados: dict, dados: dict, indicadores: dict) -> None:
     """RESUMO_EXECUTIVO.md com os números que vão para o PDF do relatório."""
-    linhas = ["# RESUMO EXECUTIVO — QuantAI (robô Hermes)", ""]
+    linhas = ["# RESUMO EXECUTIVO — QuantAI (robô KRON)", ""]
     linhas.append(f"Período do backtest: **{config.BACKTEST_INICIO} a {config.BACKTEST_FIM}** "
                   f"(decisão mensal, execução no 1º pregão do mês seguinte).")
     n_class = db.contar("sentimentos")
@@ -637,7 +637,7 @@ def escrever_resumo(tabela: dict, resultados: dict, dados: dict, indicadores: di
     linhas += ["## Resultados vs. benchmarks", "",
                "| estratégia | retorno total | CAGR | vol. anual | Sharpe | max. drawdown | turnover médio |",
                "|---|---|---|---|---|---|---|"]
-    rotulos = {"hermes_contraria": "**Hermes (contrária)**", "hermes_invertida": "**Hermes (invertida)**",
+    rotulos = {"hermes_contraria": "**KRON (contrária)**", "hermes_invertida": "**KRON (invertida)**",
                "ibovespa": "Ibovespa", "selic": "Tesouro Selic", "60_40": "60/40 (Ibov/Selic)"}
     for chave, rotulo in rotulos.items():
         m = tabela.get(chave)
@@ -754,7 +754,7 @@ def main():
     exportar_auditoria(resultados, indicadores)
 
     if not args.sem_cartas:
-        print("\nGerando cartas do Hermes (prompt congelado 9.3)...")
+        print("\nGerando cartas do KRON (prompt congelado 9.3)...")
         n = gerar_cartas(resultados, limite=args.limite_cartas)
         print(f"  cartas geradas nesta execução: {n} | total no banco: {db.contar('cartas')}")
 

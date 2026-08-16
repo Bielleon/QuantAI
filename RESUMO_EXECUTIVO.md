@@ -1,4 +1,4 @@
-# RESUMO EXECUTIVO — QuantAI (robô Hermes)
+# RESUMO EXECUTIVO — QuantAI (robô KRON)
 
 Período do backtest: **2021-01 a 2026-06** (decisão mensal, execução no 1º pregão do mês seguinte).
 
@@ -8,8 +8,8 @@ Corpus de mídia: **35472 notícias** com título; **35472 classificadas** (100%
 
 | estratégia | retorno total | CAGR | vol. anual | Sharpe | max. drawdown | turnover médio |
 |---|---|---|---|---|---|---|
-| **Hermes (contrária)** | 122.2% | 15.9% | 11.9% | 0.40 | -9.7% | 17.8% |
-| **Hermes (invertida)** | 105.5% | 14.2% | 13.4% | 0.25 | -11.6% | 22.8% |
+| **KRON (contrária)** | 122.2% | 15.9% | 11.9% | 0.40 | -9.7% | 17.8% |
+| **KRON (invertida)** | 105.5% | 14.2% | 13.4% | 0.25 | -11.6% | 22.8% |
 | Ibovespa | 46.3% | 7.3% | 18.0% | -0.12 | -22.9% | 0.0% |
 | Tesouro Selic | 79.5% | 11.4% | 1.0% | 0.00 | 0.0% | 0.0% |
 | 60/40 (Ibov/Selic) | 62.0% | 9.3% | 10.9% | -0.12 | -12.4% | 0.0% |

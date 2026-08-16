@@ -58,7 +58,9 @@
   .capa-corpo { display: flex; gap: .5in; flex: 1; align-items: center; }
   .capa-esq { flex: 1.15; }
   .capa-dir { flex: .85; text-align: center; position: relative; }
-  .capa-dir img { width: 4.5in; border-radius: 18px; box-shadow: 0 0 70px rgba(240,180,83,.22), 0 0 140px rgba(90,140,220,.18); }
+  /* cantos e brilho renderizados no próprio PNG: border-radius/box-shadow de CSS
+     e JPEG progressivo falham em alguns leitores de PDF de celular */
+  .capa-dir img { width: 5.1in; }
   /* wordmark como IMAGEM: background-clip:text quebra em leitores de PDF de celular */
   .kron-nome img { height: 1.5in; display: block; }
   .kron-sub { font-size: 14.5pt; color: #b9c4d8; margin-top: .08in; }
@@ -147,8 +149,8 @@
   .p5-dir .card p, .p5-dir .card li { font-size: 10.2pt; color: #b9c4d8; line-height: 1.48; }
   .p5-dir .card li + li { margin-top: .05in; }
   .p5-dir ul { padding-left: .18in; }
-  .p5-rodape { display: flex; align-items: center; gap: .16in; margin-top: auto; }
-  .p5-rodape img { height: .78in; border-radius: 10px; }
+  .p5-rodape { display: flex; align-items: center; gap: .1in; margin-top: auto; }
+  .p5-rodape img { height: 1in; }
   .p5-rodape .muted { font-size: 9pt; }
 </style>
 </head>
@@ -170,7 +172,7 @@
       </div>
       <div class="chronos">KRON ecoa Chronos, o tempo. Decide uma vez por mês, executa pontual como um <i>cron job</i>, e nenhuma informação futura entra em decisão passada.</div>
     </div>
-    <div class="capa-dir"><img src="{{IMG_KRON}}" alt="KRON, robô com cabeça de cristal metade sol, metade lua, e um anel-relógio em órbita"></div>
+    <div class="capa-dir"><img src="{{IMG_KRON_CAPA}}" alt="KRON, robô com cabeça de cristal metade sol, metade lua, e um anel-relógio em órbita"></div>
   </div>
   <div class="stats">
     <div class="card"><div class="v num">{{N_MANCHETES_MIL}}</div><div class="k">manchetes lidas por IA</div></div>
@@ -232,7 +234,7 @@
     <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(270deg)"></i></div><h3>Mês M+1</h3><p>Carteira rende; a parcela fora da bolsa acumula a Selic diária oficial</p></div>
   </div>
   <div class="rigor">
-    <div class="card"><h3>Teste de vazamento com mutação</h3><p>Plantamos um vazamento do futuro e o teste anti-look-ahead precisa acusá-lo: <span class="destaque">1.198 violações detectadas</span> na prova.</p></div>
+    <div class="card"><h3>Teste de vazamento com mutação</h3><p>Plantamos um vazamento que desloca todas as notícias um mês: o teste acusou <span class="destaque">1.198 das 1.320 posições verificadas</span>; nas demais, o deslocamento não muda a contagem.</p></div>
     <div class="card"><h3>58 verificações do motor</h3><p>Dados sintéticos de resposta conhecida conferem fórmula do S, teto de 15%, veto vencendo sentimento, drawdown exato e Selic sem dupla contagem.</p></div>
     <div class="card"><h3>Uma única série Selic</h3><p>A mesma taxa oficial do BCB remunera a renda fixa, compõe o 60/40 e serve de piso ao Sharpe.</p></div>
     <div class="card"><h3>IA auditando IA</h3><p>Agentes revisores independentes atacaram código e dados: <span class="destaque">14 defeitos reais corrigidos</span> antes dos resultados, entre eles um teto de risco furado e um teste vazio.</p></div>
@@ -263,6 +265,7 @@
         <tr><td>Tesouro Selic</td><td class="num">{{RET_SELIC}}</td><td class="num">{{CAGR_SELIC}}</td><td class="num">{{VOL_SELIC}}</td><td class="num">0,00</td><td class="num">0%</td></tr>
         <tr><td>60/40</td><td class="num">{{RET_6040}}</td><td class="num">{{CAGR_6040}}</td><td class="num">{{VOL_6040}}</td><td class="num">{{SHP_6040}}</td><td class="num">{{DD_6040}}</td></tr>
       </table>
+      <div style="font-size:7.8pt; color:#8291ab; margin-top:.06in">Sharpe: retornos mensais em excesso à Selic acumulada no mesmo período; anualização ×12 na média e ×√12 no desvio.</div>
     </div>
     <div class="p4-col2">
       <div class="card">
@@ -282,7 +285,7 @@
   <div class="topo"><h1>Como a IA generativa foi usada, <span class="ouro">e onde ela errou</span></h1><div class="pagnum">5/5</div></div>
   <div class="p5-corpo">
     <div class="p5-ia">
-      <div class="card uso"><div class="n">1</div><div><h3>Ler o noticiário em escala</h3><p>{{N_MANCHETES_PONTO}} manchetes classificadas (sentimento e empresa) com prompt congelado, temperatura 0 e modelo fixado. Replicável e dentro da cota gratuita.</p></div></div>
+      <div class="card uso"><div class="n">1</div><div><h3>Ler o noticiário em escala</h3><p>{{N_MANCHETES_PONTO}} manchetes classificadas (sentimento e empresa) com prompt congelado, temperatura 0 e modelo fixado. Das {{N_COLETADAS}} coletadas, 120 ficaram sem manchete utilizável e fora da classificação.</p></div></div>
       <div class="card uso"><div class="n">2</div><div><h3>Extrair risco grave dos fatos relevantes</h3><p>Dos 5.102 documentos triados, 2.250 com indício de risco foram lidos pelo LLM, que só aponta risco citando o trecho exato do PDF, conferido por código. 1 veto real, zero alucinações aceitas.</p></div></div>
       <div class="card uso"><div class="n">3</div><div><h3>Auditar o próprio sistema</h3><p>Enxames de agentes revisaram código e dados em cada fase; só no motor do backtest confirmaram 14 defeitos reais, do teto de risco furado a um teste que aprovava qualquer coisa.</p></div></div>
       <div class="card uso"><div class="n">4</div><div><h3>Criar a identidade do robô</h3><p>Nome, conceito e mascote do KRON nasceram de iteração com IA generativa.</p></div></div>
@@ -300,13 +303,13 @@
         <div class="rotulo">Próximos passos</div>
         <ul>
           <li>Medir a acurácia do classificador com o gabarito humano de 150 manchetes</li>
-          <li>OCR nos 34 documentos escaneados; ampliar o universo além das 20 ações</li>
+          <li>OCR nos 34 documentos escaneados sem leitura de risco (já dentro dos 5.102 triados); ampliar o universo além das 20 ações</li>
           <li>Testar a tendência de preço (hoje só auditada) como filtro adicional</li>
           <li>Paper trading com os sinais ao vivo antes de qualquer capital real</li>
         </ul>
       </div>
       <div class="p5-rodape">
-        <img src="{{IMG_KRON}}" alt="KRON">
+        <img src="{{IMG_KRON_CAPA}}" alt="KRON">
         <div class="muted">KRON · Desafio Quant AI 2026 · backtest e código próprios, dados públicos</div>
       </div>
     </div>
