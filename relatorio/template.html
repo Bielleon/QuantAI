@@ -59,8 +59,8 @@
   .capa-esq { flex: 1.15; }
   .capa-dir { flex: .85; text-align: center; position: relative; }
   .capa-dir img { width: 4.5in; border-radius: 18px; box-shadow: 0 0 70px rgba(240,180,83,.22), 0 0 140px rgba(90,140,220,.18); }
-  .kron-nome { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 92pt; font-weight: 700; letter-spacing: .04em; line-height: 1;
-    background: linear-gradient(100deg, #cfe2ff 5%, #f4f7fd 35%, #f0b453 82%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* wordmark como IMAGEM: background-clip:text quebra em leitores de PDF de celular */
+  .kron-nome img { height: 1.5in; display: block; }
   .kron-sub { font-size: 14.5pt; color: #b9c4d8; margin-top: .08in; }
   .tagline { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 19pt; font-weight: 600; color: #f0b453; margin: .22in 0 .24in; }
   .acronimo { display: grid; grid-template-columns: 1fr 1fr; gap: .11in .3in; margin-bottom: .22in; }
@@ -155,7 +155,7 @@
   <div class="eyebrow">Desafio Quant AI 2026 · Relatório final</div>
   <div class="capa-corpo">
     <div class="capa-esq">
-      <div class="kron-nome">KRON</div>
+      <div class="kron-nome"><img src="{{IMG_WORDMARK}}" alt="KRON"></div>
       <div class="kron-sub"><b>K</b>ernel de <b>R</b>astreamento de <b>O</b>timismo e <b>N</b>otícias</div>
       <div class="tagline">O robô que compra o pessimismo.</div>
       <div class="acronimo">

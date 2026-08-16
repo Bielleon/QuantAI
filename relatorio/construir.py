@@ -113,6 +113,7 @@ def montar_tokens() -> dict:
     return {
         "LEGENDA_SENTIMENTO": legenda_sent,
         "IMG_KRON": b64(ASSETS / "kron.jpg"),
+        "IMG_WORDMARK": b64(ASSETS / "kron_wordmark.png"),
         "IMG_PATRIMONIO": b64(ASSETS / "grafico_patrimonio.png"),
         "IMG_ALOCACAO": b64(ASSETS / "grafico_alocacao.png"),
         "IMG_SENTIMENTO": b64(ASSETS / "grafico_sentimento.png"),
