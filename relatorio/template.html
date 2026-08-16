@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: 13.333in 7.5in; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", system-ui, sans-serif; color: #e9eef8; }
+
+  /* anel-relógio do KRON (eco do mascote) como marca d'água das páginas internas */
+  .pg {
+    width: 13.333in; height: 7.5in; overflow: hidden; position: relative;
+    background: #0c1322;
+    background-image:
+      radial-gradient(1.5px 1.5px at 82% 12%, rgba(240,180,83,.8), transparent 100%),
+      radial-gradient(1px 1px at 90% 30%, rgba(207,226,255,.7), transparent 100%),
+      radial-gradient(1.2px 1.2px at 12% 78%, rgba(207,226,255,.5), transparent 100%),
+      radial-gradient(1px 1px at 30% 8%, rgba(240,180,83,.5), transparent 100%),
+      radial-gradient(ellipse 62% 48% at 80% 14%, rgba(240,180,83,.075), transparent 62%),
+      radial-gradient(ellipse 58% 52% at 12% 88%, rgba(90,140,220,.09), transparent 62%),
+      linear-gradient(160deg, #0d1526 0%, #0b1220 55%, #0d1729 100%);
+    page-break-after: always; padding: .42in .55in;
+    display: flex; flex-direction: column;
+  }
+  .pg::before {
+    content: ""; position: absolute; top: -1.9in; right: -2.2in; width: 6in; height: 6in;
+    border: 1px dashed rgba(240,180,83,.28); border-radius: 50%;
+    transform: rotate(-18deg) scaleY(.42); pointer-events: none;
+  }
+  .pg::after {
+    content: ""; position: absolute; top: -1.55in; right: -1.85in; width: 5.2in; height: 5.2in;
+    border: 2px solid transparent; border-radius: 50%;
+    border-top-color: rgba(127,179,232,.20); border-right-color: rgba(240,180,83,.22);
+    transform: rotate(-18deg) scaleY(.42); pointer-events: none;
+  }
+  .pg:last-child { page-break-after: avoid; }
+
+  .ouro { color: #f0b453; } .lua { color: #9cc3f5; } .verm { color: #e66767; }
+  .muted { color: #8291ab; } .sec { color: #b9c4d8; }
+  .display { font-family: "Bahnschrift", "Segoe UI", sans-serif; }
+  .mono { font-family: "Cascadia Mono", "Consolas", monospace; }
+
+  .eyebrow { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 10pt; letter-spacing: .26em; color: #8291ab; text-transform: uppercase; }
+  h1 { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 22pt; font-weight: 600; letter-spacing: .01em; }
+  .card {
+    background: linear-gradient(155deg, rgba(24,37,62,.85), rgba(17,27,47,.72));
+    border: 1px solid rgba(157,187,231,.10);
+    border-radius: 10px; padding: .16in .2in;
+  }
+  .rotulo { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 8.6pt; letter-spacing: .16em; text-transform: uppercase; color: #f0b453; font-weight: 600; margin-bottom: .06in; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ============ PÁGINA 1 — CAPA ============ */
+  .capa { justify-content: space-between; }
+  .capa::before { top: auto; bottom: -2.3in; left: -2.4in; right: auto; width: 7in; height: 7in; border-color: rgba(127,179,232,.18); }
+  .capa::after { display: none; }
+  .capa-corpo { display: flex; gap: .5in; flex: 1; align-items: center; }
+  .capa-esq { flex: 1.15; }
+  .capa-dir { flex: .85; text-align: center; position: relative; }
+  .capa-dir img { width: 4.5in; border-radius: 18px; box-shadow: 0 0 70px rgba(240,180,83,.22), 0 0 140px rgba(90,140,220,.18); }
+  .kron-nome { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 92pt; font-weight: 700; letter-spacing: .04em; line-height: 1;
+    background: linear-gradient(100deg, #cfe2ff 5%, #f4f7fd 35%, #f0b453 82%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .kron-sub { font-size: 14.5pt; color: #b9c4d8; margin-top: .08in; }
+  .tagline { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 19pt; font-weight: 600; color: #f0b453; margin: .22in 0 .24in; }
+  .acronimo { display: grid; grid-template-columns: 1fr 1fr; gap: .11in .3in; margin-bottom: .22in; }
+  .acronimo .letra { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 16pt; font-weight: 700; color: #f0b453; width: .3in; display: inline-block; }
+  .acronimo div { font-size: 10.2pt; color: #b9c4d8; }
+  .acronimo b { color: #e9eef8; }
+  .chronos { font-size: 10.2pt; color: #8291ab; font-style: italic; max-width: 6.5in; border-left: 2px solid rgba(240,180,83,.45); padding-left: .14in; }
+  .stats { display: flex; gap: .14in; }
+  .stats .card { flex: 1; text-align: center; padding: .12in .06in; }
+  .stats .v { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 17pt; font-weight: 700; color: #f0b453; }
+  .stats .k { font-size: 8.6pt; color: #8291ab; margin-top: .03in; }
+
+  /* ============ CABEÇALHO INTERNO ============ */
+  .topo { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .18in; }
+  .topo .pagnum { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 9pt; color: #8291ab; letter-spacing: .1em; }
+
+  /* ============ PÁGINA 2 ============ */
+  .p2-linha1 { display: flex; gap: .18in; margin-bottom: .16in; }
+  .hipotese { flex: 1.25; }
+  .hipotese p { font-size: 10.6pt; line-height: 1.45; color: #b9c4d8; }
+  .formulas { flex: 1; display: flex; flex-direction: column; gap: .1in; }
+  .formula { font-family: "Cascadia Mono", "Consolas", monospace; font-size: 12.5pt; text-align: center; font-weight: 600; color: #e9eef8; padding: .1in; }
+  .formula small { display: block; font-family: "Segoe UI", sans-serif; font-size: 8.6pt; color: #8291ab; font-weight: 400; margin-top: .045in; }
+  .fluxo { display: flex; align-items: stretch; gap: .1in; margin-bottom: .16in; }
+  .etapa { flex: 1; padding: .11in .12in; }
+  .etapa .n { font-family: "Bahnschrift", sans-serif; font-size: 8.6pt; font-weight: 700; color: #0c1322; background: linear-gradient(120deg, #9cc3f5, #f0b453); border-radius: 99px; padding: .015in .075in; }
+  .etapa h3 { font-size: 10.6pt; margin: .05in 0 .03in; color: #e9eef8; }
+  .etapa p { font-size: 8.8pt; color: #8291ab; line-height: 1.34; }
+  .seta { align-self: center; color: #f0b453; font-size: 12pt; }
+  .p2-rodape { display: flex; gap: .18in; flex: 1; min-height: 0; }
+  .pilares { flex: 1.05; display: flex; flex-direction: column; gap: .12in; justify-content: center; }
+  .pilar { display: flex; gap: .12in; align-items: baseline; }
+  .pilar .t { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 13.5pt; font-weight: 700; white-space: nowrap; }
+  .pilar .d { font-size: 9.4pt; color: #8291ab; }
+  .p2-graf { flex: 1.4; display: flex; flex-direction: column; }
+  .p2-graf img { width: 100%; max-height: 1.86in; object-fit: contain; margin-top: .04in; }
+  .legenda-graf { font-size: 8.6pt; color: #8291ab; margin-top: .03in; }
+
+  /* ============ PÁGINA 3 ============ */
+  .timeline { display: flex; align-items: stretch; gap: 0; margin-bottom: .18in; }
+  .tl-bloco { flex: 1; text-align: center; padding: .13in .14in; }
+  .tl-bloco h3 { font-size: 11.5pt; color: #e9eef8; margin-bottom: .035in; }
+  .tl-bloco p { font-size: 9pt; color: #8291ab; line-height: 1.35; }
+  .relogio { width: .26in; height: .26in; border: 1.6px solid #f0b453; border-radius: 50%; margin: 0 auto .06in; position: relative; }
+  .relogio i { position: absolute; left: 50%; top: 50%; width: 1.4px; height: .095in; background: #f0b453; transform-origin: top center; }
+  .tl-seta { display: flex; align-items: center; padding: 0 .08in; color: #f0b453; font-size: 14pt; }
+  .rigor { display: grid; grid-template-columns: repeat(3, 1fr); gap: .13in; flex: 1; margin-bottom: .16in; }
+  .rigor .card h3 { font-size: 10.8pt; margin-bottom: .045in; }
+  .rigor .card p { font-size: 9.1pt; color: #8291ab; line-height: 1.4; }
+  .rigor .card .destaque { color: #f0b453; font-weight: 700; }
+  .universo { display: flex; align-items: center; gap: .2in; padding: .1in .2in; }
+  .universo .rotulo { margin: 0; }
+  .universo p { font-size: 9.6pt; color: #b9c4d8; }
+
+  /* ============ PÁGINA 4 ============ */
+  .p4-graf { text-align: center; }
+  .p4-graf img { width: 100%; max-height: 2.98in; object-fit: contain; }
+  .leitura .card { padding: .11in .14in; }
+  .p4-base { display: flex; gap: .16in; flex: 1; margin-top: .12in; min-height: 0; }
+  .tabela { flex: 1.25; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.4pt; }
+  th { font-family: "Bahnschrift", "Segoe UI", sans-serif; font-size: 8.4pt; letter-spacing: .09em; text-transform: uppercase; color: #8291ab; font-weight: 600; text-align: right; padding: .045in .06in; border-bottom: 1px solid rgba(157,187,231,.2); }
+  th:first-child, td:first-child { text-align: left; }
+  td { padding: .05in .06in; text-align: right; color: #b9c4d8; border-bottom: 1px solid rgba(157,187,231,.07); }
+  tr.kron td { color: #f0b453; font-weight: 700; }
+  tr.kron2 td { color: #9cc3f5; font-weight: 600; }
+  .p4-col2 { flex: 1; display: flex; flex-direction: column; gap: .1in; }
+  .p4-col2 img { width: 100%; }
+  .leitura { flex: 1.05; display: flex; flex-direction: column; gap: .1in; }
+  .leitura .card p { font-size: 9.3pt; color: #b9c4d8; line-height: 1.4; }
+  .leitura .card h3 { font-size: 10.2pt; margin-bottom: .03in; }
+
+  /* ============ PÁGINA 5 ============ */
+  .p5-corpo { display: flex; gap: .2in; flex: 1; min-height: 0; }
+  .p5-ia { flex: 1.45; display: flex; flex-direction: column; gap: .11in; }
+  .uso { display: flex; gap: .13in; align-items: flex-start; padding: .1in .14in; }
+  .uso .n { font-family: "Bahnschrift", sans-serif; font-size: 14pt; font-weight: 700; color: #f0b453; line-height: 1.1; }
+  .uso h3 { font-size: 10.6pt; margin-bottom: .025in; }
+  .uso p { font-size: 9.1pt; color: #8291ab; line-height: 1.37; }
+  .p5-dir { flex: 1; display: flex; flex-direction: column; gap: .11in; }
+  .p5-dir .card p, .p5-dir .card li { font-size: 9.3pt; color: #b9c4d8; line-height: 1.42; }
+  .p5-dir ul { padding-left: .18in; }
+  .p5-rodape { display: flex; align-items: center; gap: .16in; margin-top: .14in; }
+  .p5-rodape img { height: .72in; border-radius: 10px; }
+  .p5-rodape .muted { font-size: 8.6pt; }
+</style>
+</head>
+<body>
+
+<!-- ==================== PÁGINA 1 — CAPA ==================== -->
+<section class="pg capa">
+  <div class="eyebrow">Desafio Quant AI 2026 · Relatório final</div>
+  <div class="capa-corpo">
+    <div class="capa-esq">
+      <div class="kron-nome">KRON</div>
+      <div class="kron-sub"><b>K</b>ernel de <b>R</b>astreamento de <b>O</b>timismo e <b>N</b>otícias</div>
+      <div class="tagline">O robô que compra o pessimismo.</div>
+      <div class="acronimo">
+        <div><span class="letra">K</span><b>Kernel</b>: o núcleo matemático que decide</div>
+        <div><span class="letra">R</span><b>Rastreamento</b> do noticiário, mês a mês</div>
+        <div><span class="letra">O</span><b>Otimismo</b>: o humor do mercado é o sinal</div>
+        <div><span class="letra">N</span><b>Notícias</b>: a matéria-prima do modelo</div>
+      </div>
+      <div class="chronos">KRON ecoa Chronos, o tempo. Decide uma vez por mês, executa pontual como um <i>cron job</i>, e nenhuma informação futura entra em decisão passada.</div>
+    </div>
+    <div class="capa-dir"><img src="{{IMG_KRON}}" alt="KRON, robô com cabeça de cristal metade sol, metade lua, e um anel-relógio em órbita"></div>
+  </div>
+  <div class="stats">
+    <div class="card"><div class="v num">{{N_MANCHETES_MIL}}</div><div class="k">manchetes lidas por IA</div></div>
+    <div class="card"><div class="v num">5.102</div><div class="k">documentos CVM auditados</div></div>
+    <div class="card"><div class="v num">20 + Selic</div><div class="k">ações de qualidade + renda fixa</div></div>
+    <div class="card"><div class="v num">66 meses</div><div class="k">jan/2021 a jun/2026, com custos</div></div>
+    <div class="card"><div class="v num">R$ 0</div><div class="k">custo de dados e de IA</div></div>
+  </div>
+</section>
+
+<!-- ==================== PÁGINA 2 — TESE E MODELO ==================== -->
+<section class="pg">
+  <div class="topo"><h1>A tese: <span class="ouro">o medo das manchetes</span> chega atrasado ao preço</h1><div class="pagnum">2/5</div></div>
+  <div class="p2-linha1">
+    <div class="card hipotese">
+      <div class="rotulo">Hipótese e ineficiência explorada</div>
+      <p>Quando as manchetes de um mês ficam uniformemente pessimistas, o medo tende a já estar nos preços; na euforia, o inverso. O KRON trata o sentimento agregado da mídia como contra-indicador (De Bondt &amp; Thaler, 1985): mais bolsa nos meses de pessimismo, menos nos de otimismo, sempre pela mesma regra.</p>
+    </div>
+    <div class="formulas">
+      <div class="card formula">S = (n⁺ − n⁻) / n<small>sentimento do mês, por empresa e do mercado · S ∈ [−1, +1]</small></div>
+      <div class="card formula">%Bolsa = 60 − 20·S → [40, 80]<small>restante em Tesouro Selic · pesos por ranking de S, teto de 15% por ação</small></div>
+    </div>
+  </div>
+  <div class="fluxo">
+    <div class="card etapa"><span class="n">1</span><h3>Coleta</h3><p>{{N_COLETADAS}} manchetes (Google News e GDELT) e 5.102 docs CVM, 2021 a 2026</p></div>
+    <div class="seta">→</div>
+    <div class="card etapa"><span class="n">2</span><h3>IA lê</h3><p>Gemini classifica cada manchete: positiva, negativa ou neutra, e identifica a empresa citada</p></div>
+    <div class="seta">→</div>
+    <div class="card etapa"><span class="n">3</span><h3>Kernel calcula</h3><p>S por empresa e do mercado; elegível só quem tem ≥10 manchetes no mês</p></div>
+    <div class="seta">→</div>
+    <div class="card etapa"><span class="n">4</span><h3>CVM freia</h3><p>Risco grave em fato relevante veta a empresa por 6 meses, acima de qualquer sentimento</p></div>
+    <div class="seta">→</div>
+    <div class="card etapa"><span class="n">5</span><h3>Executa</h3><p>Carteira montada no 1º pregão do mês seguinte, a fechamento ajustado</p></div>
+  </div>
+  <div class="p2-rodape">
+    <div class="pilares">
+      <div class="pilar"><span class="t lua">A IA lê.</span><span class="d">nenhum número passa pelo modelo</span></div>
+      <div class="pilar"><span class="t ouro">O kernel calcula.</span><span class="d">fórmulas fixas geram toda decisão</span></div>
+      <div class="pilar"><span class="t verm">A CVM freia.</span><span class="d">fato oficial vence humor de manchete</span></div>
+    </div>
+    <div class="card p2-graf">
+      <div class="rotulo">O sinal: sentimento do mercado (S), mês a mês</div>
+      <img src="{{IMG_SENTIMENTO}}" alt="Sentimento do mercado por mês">
+      <div class="legenda-graf">Meses de lua (pessimismo) elevam a bolsa até 80%; meses de sol (otimismo) reduzem até 40%.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PÁGINA 3 — BACKTEST ==================== -->
+<section class="pg">
+  <div class="topo"><h1>Backtest: <span class="ouro">o tempo anda numa direção só</span></h1><div class="pagnum">3/5</div></div>
+  <div class="timeline">
+    <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(0deg)"></i></div><h3>Mês M</h3><p>Manchetes e fatos relevantes publicados <b>até o último dia de M</b> formam o sinal</p></div>
+    <div class="tl-seta">→</div>
+    <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(90deg)"></i></div><h3>Virada do mês</h3><p>Sinais congelados: S, ranking, vetos e %Bolsa ficam definidos</p></div>
+    <div class="tl-seta">→</div>
+    <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(180deg)"></i></div><h3>1º pregão de M+1</h3><p>Execução a fechamento ajustado, com custo de <b>0,1% sobre o giro</b></p></div>
+    <div class="tl-seta">→</div>
+    <div class="card tl-bloco"><div class="relogio"><i style="transform: rotate(270deg)"></i></div><h3>Mês M+1</h3><p>Carteira rende; a parcela fora da bolsa acumula a Selic diária oficial</p></div>
+  </div>
+  <div class="rigor">
+    <div class="card"><h3>Teste de vazamento com mutação</h3><p>Plantamos um vazamento do futuro e o teste anti-look-ahead precisa acusá-lo: <span class="destaque">74 violações detectadas</span> na prova.</p></div>
+    <div class="card"><h3>39 verificações do motor</h3><p>Dados sintéticos de resposta conhecida conferem fórmula do S, teto de 15%, veto vencendo sentimento, drawdown exato e Selic sem dupla contagem.</p></div>
+    <div class="card"><h3>Uma única série Selic</h3><p>A mesma taxa oficial do BCB remunera a renda fixa, compõe o 60/40 e serve de piso ao Sharpe.</p></div>
+    <div class="card"><h3>IA auditando IA</h3><p>Agentes revisores independentes atacaram código e dados: <span class="destaque">14 defeitos reais corrigidos</span> antes dos resultados, entre eles um teto de risco furado e um teste vazio.</p></div>
+    <div class="card"><h3>Alucinação barrada por código</h3><p>Veto só existe se a citação do LLM for <b>cópia literal</b> do PDF oficial. Em 2.250 documentos, <span class="destaque">zero alucinações aceitas</span>.</p></div>
+    <div class="card"><h3>Vieses declarados</h3><p>O universo foi filtrado com dados recentes (sobrevivência) e a cobertura de mídia cresce de ~11 para 20 empresas elegíveis no período.</p></div>
+  </div>
+  <div class="card universo">
+    <div class="rotulo">Universo e benchmarks</div>
+    <p>20 ações líquidas da B3 aprovadas em filtro de qualidade fundamentalista (ex.: PETR4, ITUB4, WEGE3, SBSP3) + Tesouro Selic &nbsp;·&nbsp; Benchmarks: <b>Ibovespa</b>, <b>Selic</b> e <b>60/40</b> &nbsp;·&nbsp; Duas variantes reportadas: contrária (a tese) e invertida (momentum, o contra-teste)</p>
+  </div>
+</section>
+
+<!-- ==================== PÁGINA 4 — RESULTADOS ==================== -->
+<section class="pg">
+  <div class="topo"><h1>Resultados: <span class="ouro">{{TITULO_RESULTADO}}</span></h1><div class="pagnum">4/5</div></div>
+  <div class="card p4-graf">
+    <div class="rotulo">Crescimento de 100 investidos, jan/2021 a jun/2026, após custos</div>
+    <img src="{{IMG_PATRIMONIO}}" alt="Curva de patrimônio contra os benchmarks">
+  </div>
+  <div class="p4-base">
+    <div class="card tabela">
+      <div class="rotulo">Métricas dos 66 meses</div>
+      <table>
+        <tr><th>Estratégia</th><th>Retorno</th><th>a.a.</th><th>Vol.</th><th>Sharpe</th><th>Queda máx.</th></tr>
+        <tr class="kron"><td>KRON contrária</td><td class="num">{{RET_C}}</td><td class="num">{{CAGR_C}}</td><td class="num">{{VOL_C}}</td><td class="num">{{SHP_C}}</td><td class="num">{{DD_C}}</td></tr>
+        <tr class="kron2"><td>KRON invertida</td><td class="num">{{RET_I}}</td><td class="num">{{CAGR_I}}</td><td class="num">{{VOL_I}}</td><td class="num">{{SHP_I}}</td><td class="num">{{DD_I}}</td></tr>
+        <tr><td>Ibovespa</td><td class="num">{{RET_IBOV}}</td><td class="num">{{CAGR_IBOV}}</td><td class="num">{{VOL_IBOV}}</td><td class="num">{{SHP_IBOV}}</td><td class="num">{{DD_IBOV}}</td></tr>
+        <tr><td>Tesouro Selic</td><td class="num">{{RET_SELIC}}</td><td class="num">{{CAGR_SELIC}}</td><td class="num">—</td><td class="num">0,00</td><td class="num">0%</td></tr>
+        <tr><td>60/40</td><td class="num">{{RET_6040}}</td><td class="num">{{CAGR_6040}}</td><td class="num">{{VOL_6040}}</td><td class="num">{{SHP_6040}}</td><td class="num">{{DD_6040}}</td></tr>
+      </table>
+    </div>
+    <div class="p4-col2">
+      <div class="card">
+        <div class="rotulo">Onde o dinheiro esteve</div>
+        <img src="{{IMG_ALOCACAO}}" alt="Alocação entre bolsa e Tesouro Selic">
+      </div>
+    </div>
+    <div class="leitura">
+      {{LEITURA_CRITICA}}
+      <div class="card"><h3>O freio da CVM em ação</h3><p>Out/2021: o TCE-PR decretou <i>inidoneidade</i> de concessionárias da CCR. O KRON vetou a ação por 6 meses, com a citação do documento validada por código.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== PÁGINA 5 — IA GENERATIVA + CONCLUSÃO ==================== -->
+<section class="pg">
+  <div class="topo"><h1>Como a IA generativa foi usada, <span class="ouro">e onde ela errou</span></h1><div class="pagnum">5/5</div></div>
+  <div class="p5-corpo">
+    <div class="p5-ia">
+      <div class="card uso"><div class="n">1</div><div><h3>Ler o noticiário em escala</h3><p>{{N_MANCHETES_PONTO}} manchetes classificadas (sentimento e empresa) com prompt congelado, temperatura 0 e modelo fixado. Replicável e dentro da cota gratuita.</p></div></div>
+      <div class="card uso"><div class="n">2</div><div><h3>Extrair risco grave dos fatos relevantes</h3><p>2.250 documentos CVM analisados; o LLM só aponta risco citando o trecho exato do PDF, conferido por código. 1 veto real, zero alucinações aceitas.</p></div></div>
+      <div class="card uso"><div class="n">3</div><div><h3>Auditar o próprio sistema</h3><p>Enxames de agentes revisaram código, dados e vieses em cada fase: 14 defeitos reais corrigidos, do teto de risco furado a um teste que aprovava qualquer coisa.</p></div></div>
+      <div class="card uso"><div class="n">4</div><div><h3>Criar a identidade do robô</h3><p>Nome, conceito e mascote do KRON nasceram de iteração com IA generativa.</p></div></div>
+      <div class="card">
+        <div class="rotulo">Limitações medidas da IA</div>
+        <p class="sec" style="font-size:9.1pt; line-height:1.38">O modelo diverge de si mesmo: 12% das manchetes mudam de classe entre lotes de 25 e 50. Mitigação: lote fixo, prompts com hash, validação por código e amostra separada para rotulagem humana. Cotas diárias limitaram o ritmo; filas idempotentes retomam sozinhas.</p>
+      </div>
+    </div>
+    <div class="p5-dir">
+      <div class="card" style="flex:1">
+        <div class="rotulo">Conclusão</div>
+        {{CONCLUSAO}}
+      </div>
+      <div class="card">
+        <div class="rotulo">Próximos passos</div>
+        <ul>
+          <li>Medir a acurácia do classificador com o gabarito humano de 150 manchetes</li>
+          <li>OCR nos 34 documentos escaneados; ampliar o universo além das 20 ações</li>
+          <li>Testar a tendência de preço (hoje só auditada) como filtro adicional</li>
+          <li>Paper trading com os sinais ao vivo antes de qualquer capital real</li>
+        </ul>
+      </div>
+      <div class="p5-rodape">
+        <img src="{{IMG_KRON}}" alt="KRON">
+        <div class="muted">KRON · Desafio Quant AI 2026 · backtest e código próprios, dados públicos</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

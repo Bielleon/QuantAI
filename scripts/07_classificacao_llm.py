@@ -88,14 +88,19 @@ def mapear_ticker(entidade: str, mapa: dict[str, re.Pattern]) -> str | None:
     return max(casados, key=tamanho_casado)
 
 
-def noticias_pendentes(limite: int | None = None) -> list[dict]:
-    """Notícias com título e SEM sentimento ainda (idempotência)."""
+def noticias_pendentes(limite: int | None = None, shard: str | None = None) -> list[dict]:
+    """Notícias com título e SEM sentimento ainda (idempotência).
+
+    `shard` = "i/n": devolve só as notícias com id % n == i. Permite rodar N
+    processos em paralelo com fatias DISJUNTAS (cada um com sua chave própria),
+    multiplicando a vazão sem disputa nem classificação duplicada."""
+    idx, total = (int(x) for x in shard.split("/")) if shard else (0, 1)
     ja_feitas = {s["noticia_id"] for s in db.selecionar("sentimentos", {"select": "noticia_id"},
                                                         order="noticia_id")}
     pendentes = []
     for n in db.selecionar("noticias", {"select": "id,titulo,data_pub", "titulo": "not.is.null"},
                            order="id"):
-        if n["id"] not in ja_feitas:
+        if n["id"] not in ja_feitas and n["id"] % total == idx:
             pendentes.append(n)
             if limite and len(pendentes) >= limite:
                 break
@@ -207,6 +212,7 @@ def exportar_gabarito(n_amostra: int = 150):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("modo", choices=["piloto", "completo", "gabarito", "distribuicao"])
+    parser.add_argument("--shard", default=None, help='fatia "i/n" para paralelismo (ex.: 0/3)')
     args = parser.parse_args()
 
     if args.modo == "gabarito":
@@ -218,7 +224,7 @@ def main():
 
     mapa = construir_mapa_entidades()
     limite = 200 if args.modo == "piloto" else None
-    pendentes = noticias_pendentes(limite)
+    pendentes = noticias_pendentes(limite, shard=args.shard)
     print(f"Manchetes a classificar: {len(pendentes)}"
           + (" (PILOTO — revise a distribuição antes do lote completo)" if args.modo == "piloto" else ""))
     if not pendentes:

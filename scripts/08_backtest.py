@@ -28,7 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from utils import config, db  # noqa: E402
 
-NOME_ROBO = "Hermes"
+NOME_ROBO = "KRON"  # Kernel de Rastreamento de Otimismo e Notícias (definido pela equipe)
 VARIANTES = ("contraria", "invertida")
 
 
@@ -739,6 +739,17 @@ def main():
     (config.OUTPUTS_DIR / "metricas.json").write_text(
         json.dumps(tabela, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"  métricas: {config.OUTPUTS_DIR / 'metricas.json'}")
+
+    # séries completas p/ gráficos externos (relatório final) sem reprocessar o banco
+    s_mercado_serie = [{"mes": mes, "s": indicadores[("MERCADO", mes)]["s"],
+                        "n": indicadores[("MERCADO", mes)]["n_noticias"]}
+                       for mes in meses_do_backtest() if ("MERCADO", mes) in indicadores]
+    (config.OUTPUTS_DIR / "series_backtest.json").write_text(json.dumps({
+        "hermes": {v: {"serie": resultados[v]["serie"], "alocacao": resultados[v]["alocacao"],
+                       "turnover_medio": resultados[v]["turnover_medio"]} for v in VARIANTES},
+        "benchmarks": bench, "s_mercado": s_mercado_serie, "metricas": tabela,
+    }, ensure_ascii=False), encoding="utf-8")
+    print(f"  séries: {config.OUTPUTS_DIR / 'series_backtest.json'}")
 
     exportar_auditoria(resultados, indicadores)
 
