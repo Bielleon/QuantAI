@@ -96,4 +96,4 @@ Estão listadas no `RESUMO_EXECUTIVO.md` e detalhadas no `DECISOES.md`. Em resum
 fixa simplificada (sem marcação a mercado da LFT nem custódia), viés de sobrevivência no
 universo, cobertura de mídia crescente ao longo do tempo, pré-filtro de veto por palavras-chave
 (auditado, sem falso negativo encontrado), ausência de OCR para 34 documentos escaneados e
-2 pregões ausentes na fonte de preços para 8 tickers.
+2 pregões ausentes na fonte de preços para 8 tickers
